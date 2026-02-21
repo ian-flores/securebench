@@ -1,0 +1,55 @@
+url: https://ian-flores.github.io/secureeval/
+
+template:
+  bootstrap: 5
+
+reference:
+  - title: Test Cases
+    contents:
+      - test_case
+      - is_test_case
+
+  - title: Datasets
+    contents:
+      - eval_dataset
+      - add_cases
+      - dataset_size
+      - dataset_summary
+      - save_dataset
+      - load_dataset
+
+  - title: Evaluators
+    contents:
+      - evaluator
+      - is_evaluator
+      - eval_exact_match
+      - eval_contains
+      - eval_regex_match
+      - eval_numeric_close
+      - eval_custom
+
+  - title: Guardrail Evaluation
+    contents:
+      - eval_guardrail
+      - guardrail_metrics
+      - confusion_matrix
+
+  - title: Runner
+    contents:
+      - eval_run
+      - is_eval_run_result
+
+  - title: Scoring
+    contents:
+      - eval_score
+      - eval_compare
+
+  - title: Reports
+    contents:
+      - eval_report
+      - guardrail_report
+
+  - title: Integration
+    contents:
+      - benchmark_guardrail
+      - benchmark_pipeline

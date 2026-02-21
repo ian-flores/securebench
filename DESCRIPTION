@@ -1,0 +1,29 @@
+Package: secureeval
+Title: Evaluation and Benchmarking Framework for R LLM Agents
+Version: 0.1.0
+Authors@R:
+    person("Ian", "Flores Siaca", , "iflores.siaca@hey.com", role = c("aut", "cre"))
+Description: Evaluation and benchmarking framework for R LLM agents. Test
+    agents against known scenarios, score guardrail accuracy with
+    precision, recall, and F1 metrics, run regression tests, and compare
+    runs across iterations.
+License: MIT + file LICENSE
+URL: https://github.com/ian-flores/secureeval
+BugReports: https://github.com/ian-flores/secureeval/issues
+Imports:
+    cli (>= 3.0.0),
+    jsonlite,
+    rlang (>= 1.0.0)
+Suggests:
+    knitr,
+    orchestr,
+    rmarkdown,
+    secureguard,
+    securer,
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+VignetteBuilder: knitr

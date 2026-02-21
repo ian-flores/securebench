@@ -1,0 +1,170 @@
+---
+title: "Getting Started with secureeval"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with secureeval}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Overview
+
+secureeval is an evaluation and benchmarking framework for R LLM agents. It
+provides tools to:
+
+- Define test cases with expected outputs
+- Score results using built-in or custom evaluators
+- Benchmark guardrails with precision/recall/F1 metrics
+- Compare runs to detect regressions
+
+## Creating Test Cases
+
+A test case pairs an input with an expected output:
+
+```{r}
+library(secureeval)
+
+tc <- test_case(
+  input = "What is the capital of France?",
+  expected = "Paris",
+  label = "geography",
+  metadata = list(difficulty = "easy")
+)
+tc
+```
+
+## Building Datasets
+
+Group test cases into datasets for batch evaluation:
+
+```{r}
+ds <- eval_dataset(
+  cases = list(
+    test_case("What is 2+2?", "4", label = "math"),
+    test_case("Capital of France?", "Paris", label = "geography"),
+    test_case("Hello", "Hello", label = "echo")
+  ),
+  name = "basic-agent-tests",
+  description = "Simple test cases for agent evaluation"
+)
+ds
+```
+
+Datasets can be saved to and loaded from JSON:
+
+```{r}
+save_dataset(ds, "my-dataset.json")
+ds2 <- load_dataset("my-dataset.json")
+```
+
+## Running Evaluations
+
+Use `eval_run()` to test a function against a dataset:
+
+```{r}
+my_agent <- function(input) {
+  # Your agent logic here
+  input  # echo for demo
+}
+
+result <- eval_run(
+  fn = my_agent,
+  dataset = ds,
+  evaluators = list(eval_exact_match(), eval_contains()),
+  name = "baseline-v1"
+)
+```
+
+## Scoring and Reports
+
+Get aggregate scores:
+
+```{r}
+scores <- eval_score(result)
+scores$mean_score
+scores$pass_rate
+scores$by_evaluator
+scores$by_label
+```
+
+Generate formatted reports:
+
+```{r}
+eval_report(result, format = "console")
+
+df <- eval_report(result, format = "data.frame")
+head(df)
+```
+
+## Comparing Runs
+
+Compare two evaluation runs to detect improvements or regressions:
+
+```{r}
+result_v2 <- eval_run(improved_agent, ds, list(eval_exact_match()), name = "v2")
+comparison <- eval_compare(result, result_v2)
+comparison$delta_score
+comparison$improved
+comparison$regressed
+```
+
+## Guardrail Benchmarking
+
+Evaluate guardrail accuracy with precision, recall, and F1:
+
+```{r}
+my_guardrail <- function(text) {
+  !grepl("DROP TABLE|rm -rf", text)
+}
+
+metrics <- benchmark_guardrail(
+  my_guardrail,
+  positive_cases = c("DROP TABLE users", "rm -rf /"),
+  negative_cases = c("SELECT * FROM users", "Hello world")
+)
+metrics$precision
+metrics$recall
+metrics$f1
+metrics$accuracy
+```
+
+For more control, use `eval_guardrail()` and `guardrail_metrics()` directly:
+
+```{r}
+ds <- eval_dataset(list(
+  test_case("normal text", expected = TRUE, label = "benign"),
+  test_case("DROP TABLE x", expected = FALSE, label = "injection")
+))
+
+result <- eval_guardrail(my_guardrail, ds)
+m <- guardrail_metrics(result)
+cm <- confusion_matrix(result)
+```
+
+## Custom Evaluators
+
+Create evaluators tailored to your use case:
+
+```{r}
+length_eval <- eval_custom(function(result, expected) {
+  min(1, nchar(result) / max(nchar(expected), 1))
+})
+
+similarity_eval <- evaluator(
+  name = "word_overlap",
+  score_fn = function(result, expected) {
+    r_words <- strsplit(tolower(result), "\\s+")[[1]]
+    e_words <- strsplit(tolower(expected), "\\s+")[[1]]
+    length(intersect(r_words, e_words)) / max(length(e_words), 1)
+  },
+  description = "Word overlap between result and expected"
+)
+```
