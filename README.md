@@ -1,5 +1,8 @@
 # secureeval
 
+> [!CAUTION]
+> **Alpha software.** This package is part of a broader effort by [Ian Flores Siaca](https://github.com/ian-flores) to develop proper AI infrastructure for the R ecosystem. It is under active development and should **not** be used in production until an official release is published. APIs may change without notice.
+
 Evaluation and benchmarking framework for R LLM agents. Test agents against known scenarios, score guardrail accuracy (precision/recall/F1), run regression tests, and compare runs across iterations.
 
 ## Installation
