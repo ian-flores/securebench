@@ -1,0 +1,155 @@
+# secureeval
+
+> \[!CAUTION\] **Alpha software.** This package is part of a broader
+> effort by [Ian Flores Siaca](https://github.com/ian-flores) to develop
+> proper AI infrastructure for the R ecosystem. It is under active
+> development and should **not** be used in production until an official
+> release is published. APIs may change without notice.
+
+Evaluation and benchmarking framework for R LLM agents. Test agents
+against known scenarios, score guardrail accuracy (precision/recall/F1),
+run regression tests, and compare runs across iterations.
+
+## Installation
+
+``` r
+# install.packages("pak")
+pak::pak("ian-flores/secureeval")
+```
+
+## Quick Start
+
+``` r
+library(secureeval)
+
+# Create test cases
+ds <- eval_dataset(
+  cases = list(
+    test_case("What is 2+2?", "4", label = "math"),
+    test_case("Say hello", "hello", label = "greeting")
+  ),
+  name = "basic-tests"
+)
+
+# Define your agent function
+my_agent <- function(input) {
+  # Your LLM agent logic here
+  input
+}
+
+# Run evaluation
+result <- eval_run(my_agent, ds, list(eval_exact_match()))
+
+# View results
+eval_report(result)
+
+# Get scores
+scores <- eval_score(result)
+scores$mean_score
+scores$pass_rate
+```
+
+## Guardrail Benchmarking
+
+``` r
+# Benchmark a guardrail with known positive/negative cases
+my_guardrail <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)
+
+metrics <- benchmark_guardrail(
+  my_guardrail,
+  positive_cases = c("DROP TABLE users", "SELECT 1; DROP TABLE x"),
+  negative_cases = c("SELECT * FROM users", "Hello world")
+)
+metrics$precision
+metrics$recall
+metrics$f1
+```
+
+## License
+
+MIT
+
+# Package index
+
+## Test Cases
+
+- [`test_case()`](https://ian-flores.github.io/secureeval/reference/test_case.md)
+  : Create a test case
+- [`is_test_case()`](https://ian-flores.github.io/secureeval/reference/is_test_case.md)
+  : Test if an object is a test case
+
+## Datasets
+
+- [`eval_dataset()`](https://ian-flores.github.io/secureeval/reference/eval_dataset.md)
+  : Create an evaluation dataset
+- [`add_cases()`](https://ian-flores.github.io/secureeval/reference/add_cases.md)
+  : Add test cases to a dataset
+- [`dataset_size()`](https://ian-flores.github.io/secureeval/reference/dataset_size.md)
+  : Get the number of cases in a dataset
+- [`dataset_summary()`](https://ian-flores.github.io/secureeval/reference/dataset_summary.md)
+  : Summarize a dataset by label
+- [`save_dataset()`](https://ian-flores.github.io/secureeval/reference/save_dataset.md)
+  : Save a dataset to JSON
+- [`load_dataset()`](https://ian-flores.github.io/secureeval/reference/load_dataset.md)
+  : Load a dataset from JSON
+
+## Evaluators
+
+- [`evaluator()`](https://ian-flores.github.io/secureeval/reference/evaluator.md)
+  : Create an evaluator
+- [`is_evaluator()`](https://ian-flores.github.io/secureeval/reference/is_evaluator.md)
+  : Test if an object is an evaluator
+- [`eval_exact_match()`](https://ian-flores.github.io/secureeval/reference/eval_exact_match.md)
+  : Built-in evaluator: exact match
+- [`eval_contains()`](https://ian-flores.github.io/secureeval/reference/eval_contains.md)
+  : Built-in evaluator: contains
+- [`eval_regex_match()`](https://ian-flores.github.io/secureeval/reference/eval_regex_match.md)
+  : Built-in evaluator: regex match
+- [`eval_numeric_close()`](https://ian-flores.github.io/secureeval/reference/eval_numeric_close.md)
+  : Built-in evaluator: numeric closeness
+- [`eval_custom()`](https://ian-flores.github.io/secureeval/reference/eval_custom.md)
+  : Built-in evaluator: custom function
+
+## Guardrail Evaluation
+
+- [`eval_guardrail()`](https://ian-flores.github.io/secureeval/reference/eval_guardrail.md)
+  : Evaluate a guardrail against a dataset
+- [`guardrail_metrics()`](https://ian-flores.github.io/secureeval/reference/guardrail_metrics.md)
+  : Compute guardrail evaluation metrics
+- [`confusion_matrix()`](https://ian-flores.github.io/secureeval/reference/confusion_matrix.md)
+  : Create a confusion matrix from guardrail evaluation
+
+## Runner
+
+- [`eval_run()`](https://ian-flores.github.io/secureeval/reference/eval_run.md)
+  : Run an evaluation
+- [`is_eval_run_result()`](https://ian-flores.github.io/secureeval/reference/is_eval_run_result.md)
+  : Test if an object is an eval run result
+
+## Scoring
+
+- [`eval_score()`](https://ian-flores.github.io/secureeval/reference/eval_score.md)
+  : Aggregate evaluation scores
+- [`eval_compare()`](https://ian-flores.github.io/secureeval/reference/eval_compare.md)
+  : Compare two evaluation runs
+
+## Reports
+
+- [`eval_report()`](https://ian-flores.github.io/secureeval/reference/eval_report.md)
+  : Generate an evaluation report
+- [`guardrail_report()`](https://ian-flores.github.io/secureeval/reference/guardrail_report.md)
+  : Generate a guardrail evaluation report
+
+## Integration
+
+- [`benchmark_guardrail()`](https://ian-flores.github.io/secureeval/reference/benchmark_guardrail.md)
+  : Benchmark a guardrail with positive and negative cases
+- [`benchmark_pipeline()`](https://ian-flores.github.io/secureeval/reference/benchmark_pipeline.md)
+  : Benchmark a pipeline end-to-end
+
+# Articles
+
+### All vignettes
+
+- [Getting Started with
+  secureeval](https://ian-flores.github.io/secureeval/articles/secureeval.md):
