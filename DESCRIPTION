@@ -8,7 +8,8 @@ Description: Evaluation and benchmarking framework for R LLM agents. Test
     precision, recall, and F1 metrics, run regression tests, and compare
     runs across iterations.
 License: MIT + file LICENSE
-URL: https://github.com/ian-flores/secureeval
+URL: https://github.com/ian-flores/secureeval,
+    https://ian-flores.github.io/secureeval/
 BugReports: https://github.com/ian-flores/secureeval/issues
 Imports:
     cli (>= 3.0.0),
