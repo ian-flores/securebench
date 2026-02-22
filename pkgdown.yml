@@ -1,9 +1,10 @@
-pandoc: 3.1.3
+pandoc: 3.1.11
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
-  secureeval: secureeval.html
-last_built: 2026-02-21T20:32Z
+  securebench: securebench.html
+  testing-patterns: testing-patterns.html
+last_built: 2026-02-22T13:31Z
 urls:
-  reference: https://ian-flores.github.io/secureeval/reference
-  article: https://ian-flores.github.io/secureeval/articles
+  reference: https://ian-flores.github.io/securebench/reference
+  article: https://ian-flores.github.io/securebench/articles

@@ -1,29 +1,61 @@
-# Benchmark a pipeline end-to-end
+# Benchmark a guardrail pipeline end-to-end
 
-Evaluate a secureguard `secure_pipeline` against a dataset using the
-provided evaluators. Requires the secureguard package.
+Evaluate a secureguard pipeline against a labeled dataset.
 
 ## Usage
 
 ``` r
-benchmark_pipeline(pipeline, dataset, evaluators)
+benchmark_pipeline(pipeline, data)
 ```
 
 ## Arguments
 
 - pipeline:
 
-  A secureguard `secure_pipeline` object or any function that takes an
-  input and returns a result.
+  A function that takes an input and returns TRUE (pass) or FALSE
+  (block), or an object with a `$run` method.
 
-- dataset:
+- data:
 
-  A `secureeval_dataset` of test cases.
-
-- evaluators:
-
-  A list of `secureeval_evaluator` objects.
+  A data.frame with columns `input` (character) and `expected`
+  (logical). An optional `label` column provides category labels.
 
 ## Value
 
-An `eval_run_result` object.
+A `guardrail_eval_result` object.
+
+## Examples
+
+``` r
+data <- data.frame(
+  input = c("hello", "DROP TABLE users"),
+  expected = c(TRUE, FALSE)
+)
+pipeline <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)
+result <- benchmark_pipeline(pipeline, data)
+guardrail_metrics(result)
+#> $true_positives
+#> [1] 1
+#> 
+#> $true_negatives
+#> [1] 1
+#> 
+#> $false_positives
+#> [1] 0
+#> 
+#> $false_negatives
+#> [1] 0
+#> 
+#> $precision
+#> [1] 1
+#> 
+#> $recall
+#> [1] 1
+#> 
+#> $f1
+#> [1] 1
+#> 
+#> $accuracy
+#> [1] 1
+#> 
+```

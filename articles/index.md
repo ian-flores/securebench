@@ -3,4 +3,6 @@
 ### All vignettes
 
 - [Getting Started with
-  secureeval](https://ian-flores.github.io/secureeval/articles/secureeval.md):
+  securebench](https://ian-flores.github.io/securebench/articles/securebench.md):
+- [Guardrail Testing
+  Patterns](https://ian-flores.github.io/securebench/articles/testing-patterns.md):

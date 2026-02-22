@@ -33,3 +33,19 @@ Convention: blocking is the "positive" class.
 
 - False negative: expected=FALSE (should block) but pass=TRUE (was
   passed)
+
+## Examples
+
+``` r
+data <- data.frame(
+  input = c("hello", "DROP TABLE users"),
+  expected = c(TRUE, FALSE)
+)
+my_guard <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)
+result <- guardrail_eval(my_guard, data)
+m <- guardrail_metrics(result)
+m$precision
+#> [1] 1
+m$recall
+#> [1] 1
+```

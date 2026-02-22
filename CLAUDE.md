@@ -1,39 +1,30 @@
-# secureeval – Development Guide
+# securebench – Development Guide
 
 ## What This Is
 
-An R package for evaluating and benchmarking LLM agents. Pure S3, no R6.
+An R package for benchmarking guardrail accuracy in R LLM agent
+workflows. Focuses on evaluating guardrails (input validation, code
+analysis, output filtering) with precision/recall/F1 metrics.
+Interoperates with the vitals package for broader eval workflows.
 
 ## Architecture
 
-- `R/test-case.R` –
-  [`test_case()`](https://ian-flores.github.io/secureeval/reference/test_case.md)
-  S3 class
-- `R/dataset.R` –
-  [`eval_dataset()`](https://ian-flores.github.io/secureeval/reference/eval_dataset.md)
-  collection of test cases, JSON save/load
-- `R/evaluator.R` –
-  [`evaluator()`](https://ian-flores.github.io/secureeval/reference/evaluator.md)
-  S3 class wrapping scoring functions
-- `R/evaluators.R` – Built-in evaluators: exact_match, contains, regex,
-  numeric, custom
 - `R/guardrail-eval.R` –
-  [`eval_guardrail()`](https://ian-flores.github.io/secureeval/reference/eval_guardrail.md),
-  [`guardrail_metrics()`](https://ian-flores.github.io/secureeval/reference/guardrail_metrics.md),
-  [`confusion_matrix()`](https://ian-flores.github.io/secureeval/reference/confusion_matrix.md)
-- `R/runner.R` –
-  [`eval_run()`](https://ian-flores.github.io/secureeval/reference/eval_run.md)
-  to execute functions against datasets
-- `R/scorer.R` –
-  [`eval_score()`](https://ian-flores.github.io/secureeval/reference/eval_score.md)
-  aggregation,
-  [`eval_compare()`](https://ian-flores.github.io/secureeval/reference/eval_compare.md)
-  run comparison
-- `R/report.R` – Console and data.frame report generation
+  [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md),
+  [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md),
+  [`guardrail_confusion()`](https://ian-flores.github.io/securebench/reference/guardrail_confusion.md),
+  [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md)
+- `R/report.R` –
+  [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md)
+  console and data.frame output
 - `R/integration.R` –
-  [`benchmark_guardrail()`](https://ian-flores.github.io/secureeval/reference/benchmark_guardrail.md),
-  [`benchmark_pipeline()`](https://ian-flores.github.io/secureeval/reference/benchmark_pipeline.md)
+  [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md),
+  [`benchmark_pipeline()`](https://ian-flores.github.io/securebench/reference/benchmark_pipeline.md)
   convenience wrappers
+- `R/vitals.R` –
+  [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md)
+  vitals package interop
+- `R/securebench-package.R` – Package-level imports
 
 ## Development Commands
 
@@ -43,8 +34,17 @@ Rscript -e "devtools::check('.')"
 Rscript -e "devtools::document('.')"
 ```
 
+## Key Design Decisions
+
+- Input is always a plain data.frame with `input` (character),
+  `expected` (logical), optional `label` (character)
+- No custom dataset classes – uses standard R data structures
+- `guardrail_eval_result` is the universal result type
+- secureguard is Suggests (works standalone)
+- vitals is Suggests (optional interop via
+  [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md))
+
 ## Dependencies
 
-- Imports: rlang, cli, jsonlite
-- Suggests: secureguard, orchestr, securer, testthat, withr, knitr,
-  rmarkdown
+- Imports: rlang, cli
+- Suggests: secureguard, vitals, testthat, withr, knitr, rmarkdown
