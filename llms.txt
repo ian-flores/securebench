@@ -11,6 +11,27 @@ Evaluate guardrails against labeled datasets, compute
 precision/recall/F1 metrics, generate confusion matrices, compare
 results across iterations, and export as vitals-compatible scorers.
 
+## Why securebench?
+
+When you build guardrails, you need to know if they actually work.
+securebench gives you precision, recall, and F1 metrics for any
+guardrail – so you can measure how well your prompt injection detector
+catches attacks without blocking legitimate queries, and compare
+different guardrail configurations side by side.
+
+## Features
+
+| Function                                                                                             | Description                                                  |
+|------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md)           | Evaluate a guardrail against a labeled data frame            |
+| [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md)     | Compute precision, recall, F1, and accuracy                  |
+| [`guardrail_confusion()`](https://ian-flores.github.io/securebench/reference/guardrail_confusion.md) | Generate a 2x2 confusion matrix                              |
+| [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md)     | Compare two guardrails with delta metrics and per-case diffs |
+| [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md)       | Print a formatted report or return results as a data frame   |
+| [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md) | Quick-start: benchmark from positive/negative case vectors   |
+| [`benchmark_pipeline()`](https://ian-flores.github.io/securebench/reference/benchmark_pipeline.md)   | Evaluate a full secureguard pipeline end-to-end              |
+| [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md)       | Convert any guardrail to a vitals-compatible scorer function |
+
 ## Part of the secure-r-dev Ecosystem
 
 securebench is part of a 7-package ecosystem for building governed AI
@@ -96,6 +117,49 @@ scorer <- as_vitals_scorer(my_guardrail)
 scorer("safe query", TRUE)    # 1 (correct)
 scorer("DROP TABLE x", FALSE) # 1 (correct)
 ```
+
+## Comparing Guardrails
+
+``` r
+# Define test data
+data <- data.frame(
+  input = c("hello", "how are you?", "DROP TABLE users", "'; DELETE FROM accounts"),
+  expected = c(TRUE, TRUE, FALSE, FALSE),
+  label = c("benign", "benign", "injection", "injection")
+)
+
+# Two guardrail versions to compare
+guard_v1 <- function(text) !grepl("DROP", text, fixed = TRUE)
+guard_v2 <- function(text) !grepl("DROP|DELETE", text)
+
+# Evaluate both against the same dataset
+result_v1 <- guardrail_eval(guard_v1, data)
+result_v2 <- guardrail_eval(guard_v2, data)
+
+# Compare: see which improved, which regressed
+diff <- guardrail_compare(result_v1, result_v2)
+diff$delta_f1       # positive = v2 is better
+diff$improved       # cases v2 got right that v1 missed
+diff$regressed      # cases v2 got wrong that v1 had right
+```
+
+## Documentation
+
+securebench ships with two vignettes:
+
+- **Getting Started with securebench** – walkthrough of the core
+  evaluation workflow
+- **Guardrail Testing Patterns** – strategies for building labeled
+  datasets and iterating on guardrail accuracy
+
+Browse the full documentation at
+<https://ian-flores.github.io/securebench/>.
+
+## Contributing
+
+Contributions are welcome! Please file issues on
+[GitHub](https://github.com/ian-flores/securebench/issues) and submit
+pull requests.
 
 ## License
 

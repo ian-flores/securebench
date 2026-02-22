@@ -56,10 +56,65 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="securebench">securebench<a class="anchor" aria-label="anchor" href="#securebench"></a>
 </h1></div>
+<!-- badges: start -->
+
 <blockquote>
 <p>[!CAUTION] <strong>Alpha software.</strong> This package is part of a broader effort by <a href="https://github.com/ian-flores" class="external-link">Ian Flores Siaca</a> to develop proper AI infrastructure for the R ecosystem. It is under active development and should <strong>not</strong> be used in production until an official release is published. APIs may change without notice.</p>
 </blockquote>
 <p>Benchmarking framework for guardrail accuracy in R LLM agent workflows. Evaluate guardrails against labeled datasets, compute precision/recall/F1 metrics, generate confusion matrices, compare results across iterations, and export as vitals-compatible scorers.</p>
+<div class="section level2">
+<h2 id="why-securebench">Why securebench?<a class="anchor" aria-label="anchor" href="#why-securebench"></a>
+</h2>
+<p>When you build guardrails, you need to know if they actually work. securebench gives you precision, recall, and F1 metrics for any guardrail – so you can measure how well your prompt injection detector catches attacks without blocking legitimate queries, and compare different guardrail configurations side by side.</p>
+</div>
+<div class="section level2">
+<h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="43%">
+<col width="56%">
+</colgroup>
+<thead><tr class="header">
+<th>Function</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code><a href="reference/guardrail_eval.html">guardrail_eval()</a></code></td>
+<td>Evaluate a guardrail against a labeled data frame</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/guardrail_metrics.html">guardrail_metrics()</a></code></td>
+<td>Compute precision, recall, F1, and accuracy</td>
+</tr>
+<tr class="odd">
+<td><code><a href="reference/guardrail_confusion.html">guardrail_confusion()</a></code></td>
+<td>Generate a 2x2 confusion matrix</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/guardrail_compare.html">guardrail_compare()</a></code></td>
+<td>Compare two guardrails with delta metrics and per-case diffs</td>
+</tr>
+<tr class="odd">
+<td><code><a href="reference/guardrail_report.html">guardrail_report()</a></code></td>
+<td>Print a formatted report or return results as a data frame</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/benchmark_guardrail.html">benchmark_guardrail()</a></code></td>
+<td>Quick-start: benchmark from positive/negative case vectors</td>
+</tr>
+<tr class="odd">
+<td><code><a href="reference/benchmark_pipeline.html">benchmark_pipeline()</a></code></td>
+<td>Evaluate a full secureguard pipeline end-to-end</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/as_vitals_scorer.html">as_vitals_scorer()</a></code></td>
+<td>Convert any guardrail to a vitals-compatible scorer function</td>
+</tr>
+</tbody>
+</table>
+</div>
 <div class="section level2">
 <h2 id="part-of-the-secure-r-dev-ecosystem">Part of the secure-r-dev Ecosystem<a class="anchor" aria-label="anchor" href="#part-of-the-secure-r-dev-ecosystem"></a>
 </h2>
@@ -172,6 +227,48 @@
 <span><span class="fu">scorer</span><span class="op">(</span><span class="st">"DROP TABLE x"</span>, <span class="cn">FALSE</span><span class="op">)</span> <span class="co"># 1 (correct)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="comparing-guardrails">Comparing Guardrails<a class="anchor" aria-label="anchor" href="#comparing-guardrails"></a>
+</h2>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Define test data</span></span>
+<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hello"</span>, <span class="st">"how are you?"</span>, <span class="st">"DROP TABLE users"</span>, <span class="st">"'; DELETE FROM accounts"</span><span class="op">)</span>,</span>
+<span>  expected <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span><span class="op">)</span>,</span>
+<span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"benign"</span>, <span class="st">"benign"</span>, <span class="st">"injection"</span>, <span class="st">"injection"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Two guardrail versions to compare</span></span>
+<span><span class="va">guard_v1</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">text</span><span class="op">)</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"DROP"</span>, <span class="va">text</span>, fixed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">guard_v2</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">text</span><span class="op">)</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"DROP|DELETE"</span>, <span class="va">text</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Evaluate both against the same dataset</span></span>
+<span><span class="va">result_v1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/guardrail_eval.html">guardrail_eval</a></span><span class="op">(</span><span class="va">guard_v1</span>, <span class="va">data</span><span class="op">)</span></span>
+<span><span class="va">result_v2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/guardrail_eval.html">guardrail_eval</a></span><span class="op">(</span><span class="va">guard_v2</span>, <span class="va">data</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Compare: see which improved, which regressed</span></span>
+<span><span class="va">diff</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/guardrail_compare.html">guardrail_compare</a></span><span class="op">(</span><span class="va">result_v1</span>, <span class="va">result_v2</span><span class="op">)</span></span>
+<span><span class="va">diff</span><span class="op">$</span><span class="va">delta_f1</span>       <span class="co"># positive = v2 is better</span></span>
+<span><span class="va">diff</span><span class="op">$</span><span class="va">improved</span>       <span class="co"># cases v2 got right that v1 missed</span></span>
+<span><span class="va">diff</span><span class="op">$</span><span class="va">regressed</span>      <span class="co"># cases v2 got wrong that v1 had right</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
+</h2>
+<p>securebench ships with two vignettes:</p>
+<ul>
+<li>
+<strong>Getting Started with securebench</strong> – walkthrough of the core evaluation workflow</li>
+<li>
+<strong>Guardrail Testing Patterns</strong> – strategies for building labeled datasets and iterating on guardrail accuracy</li>
+</ul>
+<p>Browse the full documentation at <a href="https://ian-flores.github.io/securebench/" class="uri">https://ian-flores.github.io/securebench/</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
+</h2>
+<p>Contributions are welcome! Please file issues on <a href="https://github.com/ian-flores/securebench/issues" class="external-link">GitHub</a> and submit pull requests.</p>
+</div>
+<div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
 </h2>
 <p>MIT</p>
@@ -208,7 +305,15 @@
 </ul>
 </div>
 
-
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/ian-flores/securebench/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/ian-flores/securebench/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://app.codecov.io/gh/ian-flores/securebench" class="external-link"><img src="https://codecov.io/gh/ian-flores/securebench/graph/badge.svg" alt="Codecov test coverage"></a></li>
+<li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
+<li><a href="https://ian-flores.github.io/securebench/"><img src="https://github.com/ian-flores/securebench/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
+</ul>
+</div>
 
   </aside>
 </div>
