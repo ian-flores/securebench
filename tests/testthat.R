@@ -1,4 +1,4 @@
 library(testthat)
-library(secureeval)
+library(securebench)
 
-test_check("secureeval")
+test_check("securebench")

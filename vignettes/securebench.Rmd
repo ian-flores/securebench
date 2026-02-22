@@ -1,0 +1,115 @@
+---
+title: "Getting Started with securebench"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with securebench}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Overview
+
+securebench is a benchmarking framework for guardrail accuracy in R LLM agent
+workflows. It provides tools to:
+
+- Evaluate guardrails against labeled datasets
+- Compute precision, recall, F1, and accuracy metrics
+- Generate confusion matrices and reports
+- Compare results across iterations
+- Export guardrails as vitals-compatible scorers
+
+## Quick Start
+
+The fastest way to benchmark a guardrail:
+
+```{r}
+library(securebench)
+
+my_guardrail <- function(text) {
+  !grepl("DROP TABLE|rm -rf", text)
+}
+
+metrics <- benchmark_guardrail(
+  my_guardrail,
+  positive_cases = c("DROP TABLE users", "rm -rf /"),
+  negative_cases = c("SELECT * FROM users", "Hello world")
+)
+metrics$precision
+metrics$recall
+metrics$f1
+metrics$accuracy
+```
+
+## Using Data Frames
+
+For more control, pass a data frame with `input` and `expected` columns:
+
+```{r}
+data <- data.frame(
+  input = c("normal text", "safe query", "DROP TABLE x", "rm -rf /"),
+  expected = c(TRUE, TRUE, FALSE, FALSE),
+  label = c("benign", "benign", "injection", "injection")
+)
+
+result <- guardrail_eval(my_guardrail, data)
+m <- guardrail_metrics(result)
+cm <- guardrail_confusion(result)
+```
+
+## Reports
+
+Generate formatted reports in the console or as data frames:
+
+```{r}
+guardrail_report(result, format = "console")
+
+df <- guardrail_report(result, format = "data.frame")
+head(df)
+```
+
+## Comparing Guardrails
+
+Compare two guardrail evaluations to detect improvements or regressions:
+
+```{r}
+improved_guard <- function(text) {
+  !grepl("DROP TABLE|rm -rf|DELETE FROM", text)
+}
+
+result_v2 <- guardrail_eval(improved_guard, data)
+comparison <- guardrail_compare(result, result_v2)
+comparison$delta_f1
+comparison$improved
+comparison$regressed
+```
+
+## Vitals Interop
+
+Export a guardrail as a vitals-compatible scorer:
+
+```{r}
+scorer <- as_vitals_scorer(my_guardrail)
+scorer("safe query", TRUE)    # 1 (correct)
+scorer("DROP TABLE x", FALSE) # 1 (correct)
+```
+
+## Pipeline Benchmarking
+
+Evaluate a full guardrail pipeline against a dataset:
+
+```{r}
+pipeline <- list(run = function(text) {
+  !grepl("DROP TABLE|rm -rf|eval\\(", text)
+})
+
+result <- benchmark_pipeline(pipeline, data)
+guardrail_metrics(result)
+```

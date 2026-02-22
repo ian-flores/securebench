@@ -1,52 +1,22 @@
-# secureeval
+# securebench
 
 > [!CAUTION]
 > **Alpha software.** This package is part of a broader effort by [Ian Flores Siaca](https://github.com/ian-flores) to develop proper AI infrastructure for the R ecosystem. It is under active development and should **not** be used in production until an official release is published. APIs may change without notice.
 
-Evaluation and benchmarking framework for R LLM agents. Test agents against known scenarios, score guardrail accuracy (precision/recall/F1), run regression tests, and compare runs across iterations.
+Benchmarking framework for guardrail accuracy in R LLM agent workflows. Evaluate guardrails against labeled datasets, compute precision/recall/F1 metrics, generate confusion matrices, compare results across iterations, and export as vitals-compatible scorers.
 
 ## Installation
 
 ```r
 # install.packages("pak")
-pak::pak("ian-flores/secureeval")
+pak::pak("ian-flores/securebench")
 ```
 
 ## Quick Start
 
 ```r
-library(secureeval)
+library(securebench)
 
-# Create test cases
-ds <- eval_dataset(
-  cases = list(
-    test_case("What is 2+2?", "4", label = "math"),
-    test_case("Say hello", "hello", label = "greeting")
-  ),
-  name = "basic-tests"
-)
-
-# Define your agent function
-my_agent <- function(input) {
-  # Your LLM agent logic here
-  input
-}
-
-# Run evaluation
-result <- eval_run(my_agent, ds, list(eval_exact_match()))
-
-# View results
-eval_report(result)
-
-# Get scores
-scores <- eval_score(result)
-scores$mean_score
-scores$pass_rate
-```
-
-## Guardrail Benchmarking
-
-```r
 # Benchmark a guardrail with known positive/negative cases
 my_guardrail <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)
 
@@ -58,6 +28,29 @@ metrics <- benchmark_guardrail(
 metrics$precision
 metrics$recall
 metrics$f1
+```
+
+## Data Frame API
+
+```r
+data <- data.frame(
+  input = c("normal text", "DROP TABLE users"),
+  expected = c(TRUE, FALSE),
+  label = c("benign", "injection")
+)
+
+result <- guardrail_eval(my_guardrail, data)
+m <- guardrail_metrics(result)
+cm <- guardrail_confusion(result)
+guardrail_report(result)
+```
+
+## Vitals Interop
+
+```r
+scorer <- as_vitals_scorer(my_guardrail)
+scorer("safe query", TRUE)    # 1 (correct)
+scorer("DROP TABLE x", FALSE) # 1 (correct)
 ```
 
 ## License

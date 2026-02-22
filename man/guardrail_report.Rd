@@ -18,3 +18,12 @@ For \code{"data.frame"}, returns a data.frame.
 \description{
 Generate a guardrail evaluation report
 }
+\examples{
+data <- data.frame(
+  input = c("hello", "DROP TABLE users"),
+  expected = c(TRUE, FALSE)
+)
+my_guard <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)
+result <- guardrail_eval(my_guard, data)
+guardrail_report(result, format = "data.frame")
+}

@@ -1,0 +1,26 @@
+url: https://ian-flores.github.io/securebench/
+
+template:
+  bootstrap: 5
+
+reference:
+  - title: Guardrail Evaluation
+    contents:
+      - guardrail_eval_result_class
+      - guardrail_eval
+      - guardrail_metrics
+      - guardrail_confusion
+      - guardrail_compare
+
+  - title: Reports
+    contents:
+      - guardrail_report
+
+  - title: Integration
+    contents:
+      - benchmark_guardrail
+      - benchmark_pipeline
+
+  - title: Vitals Interop
+    contents:
+      - as_vitals_scorer

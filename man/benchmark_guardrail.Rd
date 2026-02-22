@@ -7,7 +7,7 @@
 benchmark_guardrail(guardrail, positive_cases, negative_cases)
 }
 \arguments{
-\item{guardrail}{A guardrail function or object (see \code{\link[=eval_guardrail]{eval_guardrail()}}).}
+\item{guardrail}{A guardrail function or object (see \code{\link[=guardrail_eval]{guardrail_eval()}}).}
 
 \item{positive_cases}{Character vector of inputs that SHOULD be blocked.}
 
@@ -17,11 +17,10 @@ benchmark_guardrail(guardrail, positive_cases, negative_cases)
 A named list of metrics (see \code{\link[=guardrail_metrics]{guardrail_metrics()}}).
 }
 \description{
-Convenience wrapper that constructs a dataset, runs \code{\link[=eval_guardrail]{eval_guardrail()}},
+Convenience wrapper that constructs a data frame, runs \code{\link[=guardrail_eval]{guardrail_eval()}},
 and returns \code{\link[=guardrail_metrics]{guardrail_metrics()}}.
 }
 \examples{
-# A simple guardrail that blocks inputs containing "DROP TABLE"
 my_guard <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)
 metrics <- benchmark_guardrail(
   my_guard,

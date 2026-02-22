@@ -2,22 +2,29 @@
 % Please edit documentation in R/integration.R
 \name{benchmark_pipeline}
 \alias{benchmark_pipeline}
-\title{Benchmark a pipeline end-to-end}
+\title{Benchmark a guardrail pipeline end-to-end}
 \usage{
-benchmark_pipeline(pipeline, dataset, evaluators)
+benchmark_pipeline(pipeline, data)
 }
 \arguments{
-\item{pipeline}{A secureguard \code{secure_pipeline} object or any function
-that takes an input and returns a result.}
+\item{pipeline}{A function that takes an input and returns TRUE (pass)
+or FALSE (block), or an object with a \verb{$run} method.}
 
-\item{dataset}{A \code{secureeval_dataset} of test cases.}
-
-\item{evaluators}{A list of \code{secureeval_evaluator} objects.}
+\item{data}{A data.frame with columns \code{input} (character) and \code{expected}
+(logical). An optional \code{label} column provides category labels.}
 }
 \value{
-An \code{eval_run_result} object.
+A \code{guardrail_eval_result} object.
 }
 \description{
-Evaluate a secureguard \code{secure_pipeline} against a dataset using the
-provided evaluators. Requires the secureguard package.
+Evaluate a secureguard pipeline against a labeled dataset.
+}
+\examples{
+data <- data.frame(
+  input = c("hello", "DROP TABLE users"),
+  expected = c(TRUE, FALSE)
+)
+pipeline <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)
+result <- benchmark_pipeline(pipeline, data)
+guardrail_metrics(result)
 }

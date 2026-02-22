@@ -20,23 +20,28 @@ test_that("benchmark_guardrail validates arguments", {
 })
 
 test_that("benchmark_pipeline works with function", {
-  ds <- eval_dataset(list(
-    test_case("hello", "hello"),
-    test_case("world", "world")
-  ))
-  result <- benchmark_pipeline(identity, ds, list(eval_exact_match()))
-  expect_s3_class(result, "eval_run_result")
-  expect_equal(result$n_cases, 2)
+  data <- data.frame(
+    input = c("hello", "world"),
+    expected = c(TRUE, TRUE),
+    stringsAsFactors = FALSE
+  )
+  result <- benchmark_pipeline(identity, data)
+  expect_true(S7::S7_inherits(result, guardrail_eval_result_class))
+  expect_equal(length(result@results), 2)
 })
 
 test_that("benchmark_pipeline works with list-based pipeline", {
-  pipeline <- list(run = function(x) paste0(x, "!"))
-  ds <- eval_dataset(list(test_case("hi", "hi!")))
-  result <- benchmark_pipeline(pipeline, ds, list(eval_exact_match()))
-  expect_equal(result$case_results[[1]]$scores[["exact_match"]], 1)
+  pipeline <- list(run = function(x) TRUE)
+  data <- data.frame(
+    input = c("hi"),
+    expected = c(TRUE),
+    stringsAsFactors = FALSE
+  )
+  result <- benchmark_pipeline(pipeline, data)
+  expect_true(result@results[[1]]$pass)
 })
 
 test_that("benchmark_pipeline validates arguments", {
-  ds <- eval_dataset(list(test_case("x", "x")))
-  expect_error(benchmark_pipeline("not a pipeline", ds, list()), "function")
+  data <- data.frame(input = "x", expected = TRUE, stringsAsFactors = FALSE)
+  expect_error(benchmark_pipeline("not a pipeline", data), "function")
 })
