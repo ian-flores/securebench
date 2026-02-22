@@ -67,23 +67,104 @@
     
     
 <div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+<h2 id="why-benchmark-guardrails">Why Benchmark Guardrails?<a class="anchor" aria-label="anchor" href="#why-benchmark-guardrails"></a>
 </h2>
-<p>securebench is a benchmarking framework for guardrail accuracy in R
-LLM agent workflows. It provides tools to:</p>
+<p>Every guardrail in an AI agent system makes a binary decision: let
+the input through, or block it. Getting that decision wrong has real
+consequences, and the failure modes cut both ways.</p>
+<p>A guardrail that is <strong>too strict</strong> blocks legitimate
+user requests. Your agent becomes frustrating to use – users write
+normal queries and get rejected. A support chatbot that flags “how do I
+delete my account?” as a SQL injection attack is protecting nothing
+while alienating everyone. This is the <strong>false alarm</strong>
+problem: the guardrail cries wolf, and eventually people either abandon
+the system or find ways to route around it.</p>
+<p>A guardrail that is <strong>too loose</strong> lets attacks slip
+through. Prompt injections reach your LLM, SQL injection payloads hit
+your database, and code execution attacks run in your sandbox. This is
+the <strong>missed attack</strong> problem, and in security contexts it
+is almost always the more dangerous failure mode. One missed attack can
+compromise an entire system; a hundred false alarms are merely
+annoying.</p>
+<p>Benchmarking gives you numbers to reason about this trade-off.
+Instead of guessing whether your guardrail is “good enough,” you measure
+exactly how often it makes each type of mistake. securebench provides
+the tools to evaluate any guardrail function against a labeled dataset
+and compute the metrics that matter.</p>
+</div>
+<div class="section level2">
+<h2 id="the-metrics-precision-recall-and-f1">The Metrics: Precision, Recall, and F1<a class="anchor" aria-label="anchor" href="#the-metrics-precision-recall-and-f1"></a>
+</h2>
+<p>Three metrics capture the core trade-off between false alarms and
+missed attacks. Understanding them is essential before looking at any
+benchmark output.</p>
+<p><strong>Precision</strong> answers: “Of everything the guardrail
+flagged as an attack, how much actually was an attack?” A precision of
+0.90 means 90% of the inputs the guardrail blocked were genuinely
+dangerous – and 10% were false alarms. High precision means few false
+alarms, which keeps the user experience smooth.</p>
+<p><strong>Recall</strong> answers: “Of all actual attacks in the
+dataset, how many did the guardrail catch?” A recall of 0.80 means the
+guardrail caught 80% of threats and missed 20%. High recall means few
+missed attacks, which keeps the system secure.</p>
+<p><strong>F1 score</strong> is the harmonic mean of precision and
+recall. Unlike a simple average, the harmonic mean penalizes imbalance:
+a guardrail with 0.99 precision but 0.10 recall gets an F1 of 0.18, not
+0.55. This makes F1 a single number that only looks good when
+<em>both</em> precision and recall are strong.</p>
+<p>In security applications, you typically prioritize recall (catching
+threats) over precision (avoiding false alarms), but the right balance
+depends on your context. An air-gapped code execution sandbox can
+tolerate more false alarms than a customer-facing chatbot.</p>
+</div>
+<div class="section level2">
+<h2 id="the-confusion-matrix">The Confusion Matrix<a class="anchor" aria-label="anchor" href="#the-confusion-matrix"></a>
+</h2>
+<p>All four metrics flow from a 2x2 confusion matrix. Here is how it
+maps to security outcomes:</p>
+<pre><code>                        Actual Status
+                   +-----------+-----------+
+                   |  Dangerous |   Safe    |
+        +----------+-----------+-----------+
+ Guard  | Blocked  |  TRUE     |  FALSE    |
+ rail   |          |  POSITIVE |  ALARM    |
+ Said:  +----------+-----------+-----------+
+        | Passed   |  MISSED   |  TRUE     |
+        |          |  ATTACK   |  NEGATIVE |
+        +----------+-----------+-----------+</code></pre>
+<p>Reading each cell:</p>
 <ul>
-<li>Evaluate guardrails against labeled datasets</li>
-<li>Compute precision, recall, F1, and accuracy metrics</li>
-<li>Generate confusion matrices and reports</li>
-<li>Compare results across iterations</li>
-<li>Export guardrails as vitals-compatible scorers</li>
+<li>
+<strong>True Positive (top-left):</strong> The input was dangerous
+and the guardrail blocked it. This is the ideal outcome for
+threats.</li>
+<li>
+<strong>False Alarm (top-right):</strong> The input was safe but the
+guardrail blocked it anyway. Annoying but not dangerous.</li>
+<li>
+<strong>Missed Attack (bottom-left):</strong> The input was
+dangerous but the guardrail let it through. This is the worst outcome in
+security contexts.</li>
+<li>
+<strong>True Negative (bottom-right):</strong> The input was safe
+and the guardrail let it through. This is the ideal outcome for
+legitimate requests.</li>
+</ul>
+<p>The metrics connect directly:</p>
+<ul>
+<li>Precision = True Positives / (True Positives + False Alarms)</li>
+<li>Recall = True Positives / (True Positives + Missed Attacks)</li>
+<li>F1 = 2 * Precision * Recall / (Precision + Recall)</li>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+<h2 id="quick-start-benchmark_guardrail">Quick Start: benchmark_guardrail()<a class="anchor" aria-label="anchor" href="#quick-start-benchmark_guardrail"></a>
 </h2>
-<p>The fastest way to benchmark a guardrail:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<p>Now that you understand what the numbers mean, let’s compute them.
+The fastest path is <code><a href="../reference/benchmark_guardrail.html">benchmark_guardrail()</a></code>, which takes a
+guardrail function and two vectors – inputs that should be blocked and
+inputs that should pass:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/securebench/">securebench</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">my_guardrail</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">text</span><span class="op">)</span> <span class="op">{</span></span>
@@ -99,13 +180,20 @@ LLM agent workflows. It provides tools to:</p>
 <span><span class="va">metrics</span><span class="op">$</span><span class="va">recall</span></span>
 <span><span class="va">metrics</span><span class="op">$</span><span class="va">f1</span></span>
 <span><span class="va">metrics</span><span class="op">$</span><span class="va">accuracy</span></span></code></pre></div>
+<p>The <code>positive_cases</code> are inputs the guardrail should
+<strong>block</strong> (dangerous), and <code>negative_cases</code> are
+inputs it should <strong>pass</strong> (safe). securebench evaluates
+each one, checks whether the guardrail got it right, and computes all
+four metrics.</p>
 </div>
 <div class="section level2">
-<h2 id="using-data-frames">Using Data Frames<a class="anchor" aria-label="anchor" href="#using-data-frames"></a>
+<h2 id="using-data-frames-for-more-control">Using Data Frames for More Control<a class="anchor" aria-label="anchor" href="#using-data-frames-for-more-control"></a>
 </h2>
-<p>For more control, pass a data frame with <code>input</code> and
-<code>expected</code> columns:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<p>For larger or more structured test suites, pass a data frame with
+<code>input</code> and <code>expected</code> columns. The
+<code>expected</code> column uses the convention <code>TRUE</code> =
+safe (should pass), <code>FALSE</code> = dangerous (should block):</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normal text"</span>, <span class="st">"safe query"</span>, <span class="st">"DROP TABLE x"</span>, <span class="st">"rm -rf /"</span><span class="op">)</span>,</span>
 <span>  expected <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span><span class="op">)</span>,</span>
@@ -115,23 +203,86 @@ LLM agent workflows. It provides tools to:</p>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guardrail_eval.html">guardrail_eval</a></span><span class="op">(</span><span class="va">my_guardrail</span>, <span class="va">data</span><span class="op">)</span></span>
 <span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guardrail_metrics.html">guardrail_metrics</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
 <span><span class="va">cm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guardrail_confusion.html">guardrail_confusion</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
+<p>The <code>label</code> column is optional but recommended – it helps
+you see which <em>categories</em> of attack a guardrail struggles with
+when you generate reports.</p>
+</div>
+<div class="section level2">
+<h2 id="interpreting-results">Interpreting Results<a class="anchor" aria-label="anchor" href="#interpreting-results"></a>
+</h2>
+<p>Once you have metrics, here is how to read them in practice:</p>
+<table class="table">
+<colgroup>
+<col width="26%">
+<col width="23%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Metric</th>
+<th>Value</th>
+<th>Interpretation</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Precision = 1.00</td>
+<td>Perfect</td>
+<td>Every block was justified – no false alarms</td>
+</tr>
+<tr class="even">
+<td>Precision = 0.50</td>
+<td>Concerning</td>
+<td>Half of all blocks were false alarms</td>
+</tr>
+<tr class="odd">
+<td>Recall = 1.00</td>
+<td>Perfect</td>
+<td>Every attack was caught</td>
+</tr>
+<tr class="even">
+<td>Recall = 0.50</td>
+<td>Dangerous</td>
+<td>Half of all attacks slipped through</td>
+</tr>
+<tr class="odd">
+<td>F1 = 1.00</td>
+<td>Perfect</td>
+<td>Both precision and recall are perfect</td>
+</tr>
+<tr class="even">
+<td>F1 &lt; 0.70</td>
+<td>Needs work</td>
+<td>Significant imbalance or poor performance</td>
+</tr>
+</tbody>
+</table>
+<p>A common pattern: your guardrail has high recall but low precision
+(catches everything, but also blocks too many safe inputs). The fix is
+usually to make the detection patterns more specific. The reverse – high
+precision, low recall – means the guardrail is confident when it blocks
+but misses many threats. The fix is usually to add more detection
+patterns.</p>
 </div>
 <div class="section level2">
 <h2 id="reports">Reports<a class="anchor" aria-label="anchor" href="#reports"></a>
 </h2>
-<p>Generate formatted reports in the console or as data frames:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>Generate formatted reports for interactive exploration or
+programmatic analysis:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/guardrail_report.html">guardrail_report</a></span><span class="op">(</span><span class="va">result</span>, format <span class="op">=</span> <span class="st">"console"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guardrail_report.html">guardrail_report</a></span><span class="op">(</span><span class="va">result</span>, format <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
+<p>The console format gives you a quick summary during development. The
+data frame format lets you filter to specific failures, group by label,
+or feed results into downstream analysis.</p>
 </div>
 <div class="section level2">
 <h2 id="comparing-guardrails">Comparing Guardrails<a class="anchor" aria-label="anchor" href="#comparing-guardrails"></a>
 </h2>
-<p>Compare two guardrail evaluations to detect improvements or
-regressions:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<p>When you improve a guardrail, you need to verify the improvement is
+real and that nothing regressed. <code><a href="../reference/guardrail_compare.html">guardrail_compare()</a></code> takes
+a baseline and a new result and quantifies exactly what changed:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">improved_guard</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">text</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"DROP TABLE|rm -rf|DELETE FROM"</span>, <span class="va">text</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
@@ -141,12 +292,17 @@ regressions:</p>
 <span><span class="va">comparison</span><span class="op">$</span><span class="va">delta_f1</span></span>
 <span><span class="va">comparison</span><span class="op">$</span><span class="va">improved</span></span>
 <span><span class="va">comparison</span><span class="op">$</span><span class="va">regressed</span></span></code></pre></div>
+<p>The <code>regressed</code> count is the most important field: if it
+is greater than zero, the new guardrail broke something that previously
+worked. Even a small regression in recall can mean a real attack vector
+re-opened.</p>
 </div>
 <div class="section level2">
 <h2 id="vitals-interop">Vitals Interop<a class="anchor" aria-label="anchor" href="#vitals-interop"></a>
 </h2>
-<p>Export a guardrail as a vitals-compatible scorer:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p>Export any guardrail as a vitals-compatible scorer for use in broader
+LLM evaluation pipelines:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">scorer</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_vitals_scorer.html">as_vitals_scorer</a></span><span class="op">(</span><span class="va">my_guardrail</span><span class="op">)</span></span>
 <span><span class="fu">scorer</span><span class="op">(</span><span class="st">"safe query"</span>, <span class="cn">TRUE</span><span class="op">)</span>    <span class="co"># 1 (correct)</span></span>
 <span><span class="fu">scorer</span><span class="op">(</span><span class="st">"DROP TABLE x"</span>, <span class="cn">FALSE</span><span class="op">)</span> <span class="co"># 1 (correct)</span></span></code></pre></div>
@@ -154,14 +310,24 @@ regressions:</p>
 <div class="section level2">
 <h2 id="pipeline-benchmarking">Pipeline Benchmarking<a class="anchor" aria-label="anchor" href="#pipeline-benchmarking"></a>
 </h2>
-<p>Evaluate a full guardrail pipeline against a dataset:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p>Evaluate a full multi-stage guardrail pipeline against a dataset:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pipeline</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>run <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">text</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"DROP TABLE|rm -rf|eval\\("</span>, <span class="va">text</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/benchmark_pipeline.html">benchmark_pipeline</a></span><span class="op">(</span><span class="va">pipeline</span>, <span class="va">data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/guardrail_metrics.html">guardrail_metrics</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
+<p>This is useful when your production guardrail is composed of multiple
+checks (prompt injection, SQL injection, code injection) and you want to
+measure the accuracy of the whole chain.</p>
+</div>
+<div class="section level2">
+<h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+</h2>
+<p>For deeper testing patterns – regression testing, version comparison
+workflows, and advanced pipeline benchmarking – see
+<code><a href="../articles/testing-patterns.html">vignette("testing-patterns")</a></code>.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
