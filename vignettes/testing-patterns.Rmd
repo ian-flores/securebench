@@ -16,18 +16,45 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-This vignette walks through practical patterns for testing guardrails with
-securebench. By the end you will know how to:
+The `vignette("securebench")` quickstart introduced precision, recall, F1, and
+the confusion matrix -- the vocabulary for reasoning about guardrail accuracy.
+This vignette puts those concepts to work. It walks through the practical
+patterns you need to go from "I have a guardrail" to "I can prove my guardrail
+works and catch regressions automatically."
 
-1. Design labeled test datasets
+By the end you will know how to:
+
+1. Design labeled test datasets that surface real failure modes
 2. Evaluate a guardrail and interpret the resulting metrics
-3. Read a confusion matrix to diagnose failure modes
-4. Compare guardrail versions to catch regressions
-5. Set up repeatable regression tests
+3. Read a confusion matrix to diagnose where a guardrail fails
+4. Compare guardrail versions to catch regressions before deployment
+5. Set up repeatable regression tests in CI or testthat
 6. Export guardrails as vitals-compatible scorers
 
 Every operation in this vignette runs locally -- no API calls, no external
 services.
+
+### The Benchmark Workflow
+
+The overall workflow follows a repeatable loop: benchmark a guardrail, compare
+against a baseline, and generate reports that tell you what to fix next.
+
+```{mermaid}
+%%| fig-cap: "The guardrail benchmarking workflow"
+graph LR
+    A["Define test<br/>dataset"] --> B["Evaluate<br/>guardrail"]
+    B --> C{"Baseline<br/>exists?"}
+    C -- Yes --> D["Compare<br/>versions"]
+    C -- No --> E["Save as<br/>baseline"]
+    D --> F["Generate<br/>report"]
+    E --> F
+    F --> G{"Metrics<br/>acceptable?"}
+    G -- No --> H["Improve<br/>guardrail"]
+    H --> B
+    G -- Yes --> I["Ship it"]
+```
+
+Each section below maps to one or more steps in this workflow.
 
 ## Designing Test Datasets
 
