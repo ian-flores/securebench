@@ -4,9 +4,9 @@
 \name{securebench-package}
 \alias{securebench}
 \alias{securebench-package}
-\title{securebench: Guardrail Benchmarking for R LLM Agents}
+\title{securebench: Guardrail Benchmarking for Large Language Model Agents}
 \description{
-Benchmarking framework for guardrail accuracy in R LLM agent workflows. Evaluate guardrails against labeled datasets, compute precision, recall, and F1 metrics, generate confusion matrices, compare results across iterations, and export as 'vitals'-compatible scorers.
+Benchmarking framework for guardrail accuracy in R Large Language Model (LLM) agent workflows. Evaluate guardrails against labeled datasets, compute precision, recall, and F1 metrics, generate confusion matrices, compare results across iterations, and export as 'vitals'-compatible scorers.
 }
 \seealso{
 Useful links:
@@ -18,7 +18,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Ian Flores Siaca \email{iflores.siaca@hey.com}
+\strong{Maintainer}: Ian Flores Siaca \email{iflores.siaca@hey.com} [copyright holder]
 
 }
 \keyword{internal}
