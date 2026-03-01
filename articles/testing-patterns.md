@@ -4,25 +4,14 @@
 
 The
 [`vignette("securebench")`](https://ian-flores.github.io/securebench/articles/securebench.md)
-quickstart introduced precision, recall, F1, and the confusion matrix –
+quickstart introduced precision, recall, F1, and the confusion matrix,
 the vocabulary for reasoning about guardrail accuracy. This vignette
-puts those concepts to work. It walks through the practical patterns you
-need to go from “I have a guardrail” to “I can prove my guardrail works
-and catch regressions automatically.”
+walks through the practical patterns for going from “I have a guardrail”
+to “I can prove my guardrail works and catch regressions automatically.”
 
-By the end you will know how to:
+Every operation runs locally; no API calls, no external services.
 
-1.  Design labeled test datasets that surface real failure modes
-2.  Evaluate a guardrail and interpret the resulting metrics
-3.  Read a confusion matrix to diagnose where a guardrail fails
-4.  Compare guardrail versions to catch regressions before deployment
-5.  Set up repeatable regression tests in CI or testthat
-6.  Export guardrails as vitals-compatible scorers
-
-Every operation in this vignette runs locally – no API calls, no
-external services.
-
-### The Benchmark Workflow
+### The benchmark workflow
 
 The overall workflow follows a repeatable loop: benchmark a guardrail,
 compare against a baseline, and generate reports that tell you what to
@@ -44,7 +33,7 @@ graph LR
 
 Each section below maps to one or more steps in this workflow.
 
-## Designing Test Datasets
+## Designing test datasets
 
 A securebench test dataset is a plain `data.frame` with three columns:
 
@@ -97,20 +86,20 @@ injection_data
 #> 6    sql_injection
 ```
 
-### Tips for Good Test Data
+### Tips for good test data
 
-- **Balance the classes.** Include roughly equal numbers of positive
-  (should block) and negative (should pass) cases so that accuracy is
-  not misleading.
-- **Label every case.** The `label` column makes reports easier to read
-  and helps you spot which *categories* of attack a guardrail misses.
-- **Cover edge cases.** Include borderline inputs that are close to the
+- Balance the classes. Include roughly equal numbers of positive (should
+  block) and negative (should pass) cases so that accuracy is not
+  misleading.
+- Label every case. The `label` column makes reports easier to read and
+  helps you spot which categories of attack a guardrail misses.
+- Cover edge cases. Include borderline inputs that are close to the
   decision boundary, not just obvious examples.
-- **Keep it deterministic.** Guardrails tested with securebench should
-  be pure functions (same input always gives same output) so that
-  results are reproducible.
+- Keep it deterministic. Guardrails tested with securebench should be
+  pure functions (same input always gives same output) so that results
+  are reproducible.
 
-## Running guardrail_eval() and Interpreting Metrics
+## Running guardrail_eval() and interpreting metrics
 
 Define a guardrail function and evaluate it. A guardrail takes a single
 character input and returns `TRUE` (pass) or `FALSE` (block):
@@ -172,16 +161,16 @@ m
 
 The metrics list contains:
 
-| Metric            | Meaning                                                        |
-|-------------------|----------------------------------------------------------------|
-| `true_positives`  | Correctly blocked (expected=FALSE, pass=FALSE)                 |
-| `true_negatives`  | Correctly passed (expected=TRUE, pass=TRUE)                    |
-| `false_positives` | Wrongly blocked (expected=TRUE, pass=FALSE)                    |
-| `false_negatives` | Wrongly passed (expected=FALSE, pass=TRUE)                     |
-| `precision`       | TP / (TP + FP) – of everything blocked, how much was correct?  |
-| `recall`          | TP / (TP + FN) – of everything dangerous, how much was caught? |
-| `f1`              | Harmonic mean of precision and recall                          |
-| `accuracy`        | (TP + TN) / total                                              |
+| Metric            | Meaning                                                       |
+|-------------------|---------------------------------------------------------------|
+| `true_positives`  | Correctly blocked (expected=FALSE, pass=FALSE)                |
+| `true_negatives`  | Correctly passed (expected=TRUE, pass=TRUE)                   |
+| `false_positives` | Wrongly blocked (expected=TRUE, pass=FALSE)                   |
+| `false_negatives` | Wrongly passed (expected=FALSE, pass=TRUE)                    |
+| `precision`       | TP / (TP + FP); of everything blocked, how much was correct?  |
+| `recall`          | TP / (TP + FN); of everything dangerous, how much was caught? |
+| `f1`              | Harmonic mean of precision and recall                         |
+| `accuracy`        | (TP + TN) / total                                             |
 
 Note the convention: **blocking is the positive class**. A true positive
 means the guardrail correctly blocked a dangerous input.
@@ -197,7 +186,7 @@ cat(sprintf("Accuracy:  %.2f\n", m$accuracy))
 #> Accuracy:  1.00
 ```
 
-## Confusion Matrix Analysis
+## Confusion matrix analysis
 
 The confusion matrix gives a compact two-dimensional view of how the
 guardrail performed:
@@ -219,15 +208,15 @@ The matrix has:
 
 Reading the four cells:
 
-| Cell                            | Interpretation                     |
-|---------------------------------|------------------------------------|
-| `cm["blocked", "should_block"]` | True positives – correctly blocked |
-| `cm["passed", "should_block"]`  | False negatives – missed threats   |
-| `cm["blocked", "should_pass"]`  | False positives – over-blocked     |
-| `cm["passed", "should_pass"]`   | True negatives – correctly allowed |
+| Cell                            | Interpretation                    |
+|---------------------------------|-----------------------------------|
+| `cm["blocked", "should_block"]` | True positives: correctly blocked |
+| `cm["passed", "should_block"]`  | False negatives: missed threats   |
+| `cm["blocked", "should_pass"]`  | False positives: over-blocked     |
+| `cm["passed", "should_pass"]`   | True negatives: correctly allowed |
 
-In security contexts, **false negatives are usually worse than false
-positives** – a missed attack is more dangerous than an over-eager
+In security contexts, false negatives are usually worse than false
+positives because a missed attack is more dangerous than an over-eager
 block. Use recall to track how well you catch threats, and precision to
 track how often you incorrectly block legitimate inputs.
 
@@ -240,7 +229,7 @@ cat("False alarms:      ", cm["blocked", "should_pass"], "/",
 #> False alarms:       0 / 3
 ```
 
-## Detailed Reports
+## Detailed reports
 
 Use
 [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md)
@@ -287,13 +276,12 @@ during interactive development:
 guardrail_report(result, format = "console")
 ```
 
-## Comparing Guardrails with guardrail_compare()
+## Comparing guardrails with guardrail_compare()
 
-When you improve a guardrail, you need to verify the improvement is real
-and that nothing regressed.
+When you change a guardrail, you need to check that the change actually
+helped and that nothing regressed.
 [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md)
-takes a baseline and a comparison result and tells you exactly what
-changed.
+takes a baseline and a comparison result and shows what changed.
 
 First, create an improved guardrail that also catches
 [`eval()`](https://rdrr.io/r/base/eval.html) attacks:
@@ -384,7 +372,7 @@ cat(sprintf("F1 delta: %+.4f\n", comparison$delta_f1))
 #> F1 delta: +0.1429
 ```
 
-## Regression Testing Patterns
+## Regression testing patterns
 
 A regression test suite ensures guardrails do not degrade over time. The
 pattern is:
@@ -394,9 +382,9 @@ pattern is:
 2.  Store baseline metrics or a baseline `guardrail_eval_result`
 3.  After every guardrail change, re-evaluate and compare
 
-### Pattern 1: Assert on Absolute Metrics
+### Pattern 1: assert on absolute metrics
 
-The simplest approach – assert that key metrics stay above a threshold:
+The simplest approach: assert that key metrics stay above a threshold.
 
 ``` r
 test_data <- data.frame(
@@ -427,7 +415,7 @@ cat("All metric thresholds met.\n")
 #> All metric thresholds met.
 ```
 
-### Pattern 2: Assert No Regressions Against Baseline
+### Pattern 2: assert no regressions against baseline
 
 Compare against a saved baseline to make sure no individual case
 regressed:
@@ -447,7 +435,7 @@ cat("No regressions detected.\n")
 #> No regressions detected.
 ```
 
-### Pattern 3: Use benchmark_guardrail() for Quick Checks
+### Pattern 3: use benchmark_guardrail() for quick checks
 
 For a quick smoke test during development,
 [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md)
@@ -473,7 +461,7 @@ cat(sprintf("Quick check -- F1: %.2f, Recall: %.2f\n", metrics$f1, metrics$recal
 #> Quick check -- F1: 1.00, Recall: 1.00
 ```
 
-### Pattern 4: Pipeline Benchmarking
+### Pattern 4: pipeline benchmarking
 
 If you have a multi-stage guardrail pipeline (e.g., first check for
 prompt injection, then check for SQL injection), benchmark the composed
@@ -504,7 +492,7 @@ cat(sprintf("Pipeline F1: %.2f\n", pipeline_metrics$f1))
 #> Pipeline F1: 1.00
 ```
 
-## Vitals Interop via as_vitals_scorer()
+## Vitals interop via as_vitals_scorer()
 
 The [vitals](https://github.com/tidyverse/vitals) package provides a
 standardised evaluation framework for LLM applications.
@@ -515,8 +503,8 @@ wraps any guardrail into a scorer function that vitals can use.
 scorer <- as_vitals_scorer(improved_guard)
 ```
 
-The scorer takes two arguments – `input` (character) and `expected`
-(logical) – and returns `1` for a correct judgment or `0` for an
+The scorer takes two arguments, `input` (character) and `expected`
+(logical), and returns `1` for a correct judgment or `0` for an
 incorrect one:
 
 ``` r
@@ -537,7 +525,7 @@ This means you can use the scorer anywhere vitals expects a scoring
 function, bridging securebench guardrail testing into broader LLM
 evaluation pipelines.
 
-### Using a Scorer on a Dataset
+### Using a scorer on a dataset
 
 You can manually apply the scorer to a dataset to get per-row scores:
 

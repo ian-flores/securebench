@@ -70,25 +70,13 @@
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
 <p>The <code><a href="../articles/securebench.html">vignette("securebench")</a></code> quickstart introduced
-precision, recall, F1, and the confusion matrix – the vocabulary for
-reasoning about guardrail accuracy. This vignette puts those concepts to
-work. It walks through the practical patterns you need to go from “I
-have a guardrail” to “I can prove my guardrail works and catch
-regressions automatically.”</p>
-<p>By the end you will know how to:</p>
-<ol style="list-style-type: decimal">
-<li>Design labeled test datasets that surface real failure modes</li>
-<li>Evaluate a guardrail and interpret the resulting metrics</li>
-<li>Read a confusion matrix to diagnose where a guardrail fails</li>
-<li>Compare guardrail versions to catch regressions before
-deployment</li>
-<li>Set up repeatable regression tests in CI or testthat</li>
-<li>Export guardrails as vitals-compatible scorers</li>
-</ol>
-<p>Every operation in this vignette runs locally – no API calls, no
-external services.</p>
+precision, recall, F1, and the confusion matrix, the vocabulary for
+reasoning about guardrail accuracy. This vignette walks through the
+practical patterns for going from “I have a guardrail” to “I can prove
+my guardrail works and catch regressions automatically.”</p>
+<p>Every operation runs locally; no API calls, no external services.</p>
 <div class="section level3">
-<h3 id="the-benchmark-workflow">The Benchmark Workflow<a class="anchor" aria-label="anchor" href="#the-benchmark-workflow"></a>
+<h3 id="the-benchmark-workflow">The benchmark workflow<a class="anchor" aria-label="anchor" href="#the-benchmark-workflow"></a>
 </h3>
 <p>The overall workflow follows a repeatable loop: benchmark a
 guardrail, compare against a baseline, and generate reports that tell
@@ -108,7 +96,7 @@ you what to fix next.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="designing-test-datasets">Designing Test Datasets<a class="anchor" aria-label="anchor" href="#designing-test-datasets"></a>
+<h2 id="designing-test-datasets">Designing test datasets<a class="anchor" aria-label="anchor" href="#designing-test-datasets"></a>
 </h2>
 <p>A securebench test dataset is a plain <code>data.frame</code> with
 three columns:</p>
@@ -184,29 +172,25 @@ when the input passes and <code>FALSE</code> when it blocks.</p>
 <span><span class="co">#&gt; 5           benign</span></span>
 <span><span class="co">#&gt; 6    sql_injection</span></span></code></pre></div>
 <div class="section level3">
-<h3 id="tips-for-good-test-data">Tips for Good Test Data<a class="anchor" aria-label="anchor" href="#tips-for-good-test-data"></a>
+<h3 id="tips-for-good-test-data">Tips for good test data<a class="anchor" aria-label="anchor" href="#tips-for-good-test-data"></a>
 </h3>
 <ul>
-<li>
-<strong>Balance the classes.</strong> Include roughly equal numbers
-of positive (should block) and negative (should pass) cases so that
-accuracy is not misleading.</li>
-<li>
-<strong>Label every case.</strong> The <code>label</code> column
-makes reports easier to read and helps you spot which
-<em>categories</em> of attack a guardrail misses.</li>
-<li>
-<strong>Cover edge cases.</strong> Include borderline inputs that
-are close to the decision boundary, not just obvious examples.</li>
-<li>
-<strong>Keep it deterministic.</strong> Guardrails tested with
-securebench should be pure functions (same input always gives same
-output) so that results are reproducible.</li>
+<li>Balance the classes. Include roughly equal numbers of positive
+(should block) and negative (should pass) cases so that accuracy is not
+misleading.</li>
+<li>Label every case. The <code>label</code> column makes reports easier
+to read and helps you spot which categories of attack a guardrail
+misses.</li>
+<li>Cover edge cases. Include borderline inputs that are close to the
+decision boundary, not just obvious examples.</li>
+<li>Keep it deterministic. Guardrails tested with securebench should be
+pure functions (same input always gives same output) so that results are
+reproducible.</li>
 </ul>
 </div>
 </div>
 <div class="section level2">
-<h2 id="running-guardrail_eval-and-interpreting-metrics">Running guardrail_eval() and Interpreting Metrics<a class="anchor" aria-label="anchor" href="#running-guardrail_eval-and-interpreting-metrics"></a>
+<h2 id="running-guardrail_eval-and-interpreting-metrics">Running guardrail_eval() and interpreting metrics<a class="anchor" aria-label="anchor" href="#running-guardrail_eval-and-interpreting-metrics"></a>
 </h2>
 <p>Define a guardrail function and evaluate it. A guardrail takes a
 single character input and returns <code>TRUE</code> (pass) or
@@ -288,11 +272,11 @@ list:</p>
 </tr>
 <tr class="odd">
 <td><code>precision</code></td>
-<td>TP / (TP + FP) – of everything blocked, how much was correct?</td>
+<td>TP / (TP + FP); of everything blocked, how much was correct?</td>
 </tr>
 <tr class="even">
 <td><code>recall</code></td>
-<td>TP / (TP + FN) – of everything dangerous, how much was caught?</td>
+<td>TP / (TP + FN); of everything dangerous, how much was caught?</td>
 </tr>
 <tr class="odd">
 <td><code>f1</code></td>
@@ -318,7 +302,7 @@ input.</p>
 <span><span class="co">#&gt; Accuracy:  1.00</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="confusion-matrix-analysis">Confusion Matrix Analysis<a class="anchor" aria-label="anchor" href="#confusion-matrix-analysis"></a>
+<h2 id="confusion-matrix-analysis">Confusion matrix analysis<a class="anchor" aria-label="anchor" href="#confusion-matrix-analysis"></a>
 </h2>
 <p>The confusion matrix gives a compact two-dimensional view of how the
 guardrail performed:</p>
@@ -351,27 +335,26 @@ guardrail performed:</p>
 <tbody>
 <tr class="odd">
 <td><code>cm["blocked", "should_block"]</code></td>
-<td>True positives – correctly blocked</td>
+<td>True positives: correctly blocked</td>
 </tr>
 <tr class="even">
 <td><code>cm["passed", "should_block"]</code></td>
-<td>False negatives – missed threats</td>
+<td>False negatives: missed threats</td>
 </tr>
 <tr class="odd">
 <td><code>cm["blocked", "should_pass"]</code></td>
-<td>False positives – over-blocked</td>
+<td>False positives: over-blocked</td>
 </tr>
 <tr class="even">
 <td><code>cm["passed", "should_pass"]</code></td>
-<td>True negatives – correctly allowed</td>
+<td>True negatives: correctly allowed</td>
 </tr>
 </tbody>
 </table>
-<p>In security contexts, <strong>false negatives are usually worse than
-false positives</strong> – a missed attack is more dangerous than an
-over-eager block. Use recall to track how well you catch threats, and
-precision to track how often you incorrectly block legitimate
-inputs.</p>
+<p>In security contexts, false negatives are usually worse than false
+positives because a missed attack is more dangerous than an over-eager
+block. Use recall to track how well you catch threats, and precision to
+track how often you incorrectly block legitimate inputs.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Threats caught:    "</span>, <span class="va">cm</span><span class="op">[</span><span class="st">"blocked"</span>, <span class="st">"should_block"</span><span class="op">]</span>, <span class="st">"/"</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">cm</span><span class="op">[</span>, <span class="st">"should_block"</span><span class="op">]</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
@@ -381,7 +364,7 @@ inputs.</p>
 <span><span class="co">#&gt; False alarms:       0 / 3</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="detailed-reports">Detailed Reports<a class="anchor" aria-label="anchor" href="#detailed-reports"></a>
+<h2 id="detailed-reports">Detailed reports<a class="anchor" aria-label="anchor" href="#detailed-reports"></a>
 </h2>
 <p>Use <code><a href="../reference/guardrail_report.html">guardrail_report()</a></code> to see per-case results. The
 <code>"data.frame"</code> format is useful for programmatic
@@ -422,12 +405,12 @@ directly, useful during interactive development:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/guardrail_report.html">guardrail_report</a></span><span class="op">(</span><span class="va">result</span>, format <span class="op">=</span> <span class="st">"console"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="comparing-guardrails-with-guardrail_compare">Comparing Guardrails with guardrail_compare()<a class="anchor" aria-label="anchor" href="#comparing-guardrails-with-guardrail_compare"></a>
+<h2 id="comparing-guardrails-with-guardrail_compare">Comparing guardrails with guardrail_compare()<a class="anchor" aria-label="anchor" href="#comparing-guardrails-with-guardrail_compare"></a>
 </h2>
-<p>When you improve a guardrail, you need to verify the improvement is
-real and that nothing regressed. <code><a href="../reference/guardrail_compare.html">guardrail_compare()</a></code> takes
-a baseline and a comparison result and tells you exactly what
-changed.</p>
+<p>When you change a guardrail, you need to check that the change
+actually helped and that nothing regressed.
+<code><a href="../reference/guardrail_compare.html">guardrail_compare()</a></code> takes a baseline and a comparison
+result and shows what changed.</p>
 <p>First, create an improved guardrail that also catches
 <code><a href="https://rdrr.io/r/base/eval.html" class="external-link">eval()</a></code> attacks:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
@@ -538,7 +521,7 @@ broke something that previously worked:</p>
 <span><span class="co">#&gt; F1 delta: +0.1429</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="regression-testing-patterns">Regression Testing Patterns<a class="anchor" aria-label="anchor" href="#regression-testing-patterns"></a>
+<h2 id="regression-testing-patterns">Regression testing patterns<a class="anchor" aria-label="anchor" href="#regression-testing-patterns"></a>
 </h2>
 <p>A regression test suite ensures guardrails do not degrade over time.
 The pattern is:</p>
@@ -551,10 +534,10 @@ attack vectors)</li>
 <li>After every guardrail change, re-evaluate and compare</li>
 </ol>
 <div class="section level3">
-<h3 id="pattern-1-assert-on-absolute-metrics">Pattern 1: Assert on Absolute Metrics<a class="anchor" aria-label="anchor" href="#pattern-1-assert-on-absolute-metrics"></a>
+<h3 id="pattern-1-assert-on-absolute-metrics">Pattern 1: assert on absolute metrics<a class="anchor" aria-label="anchor" href="#pattern-1-assert-on-absolute-metrics"></a>
 </h3>
-<p>The simplest approach – assert that key metrics stay above a
-threshold:</p>
+<p>The simplest approach: assert that key metrics stay above a
+threshold.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">test_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
@@ -584,7 +567,7 @@ threshold:</p>
 <span><span class="co">#&gt; All metric thresholds met.</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="pattern-2-assert-no-regressions-against-baseline">Pattern 2: Assert No Regressions Against Baseline<a class="anchor" aria-label="anchor" href="#pattern-2-assert-no-regressions-against-baseline"></a>
+<h3 id="pattern-2-assert-no-regressions-against-baseline">Pattern 2: assert no regressions against baseline<a class="anchor" aria-label="anchor" href="#pattern-2-assert-no-regressions-against-baseline"></a>
 </h3>
 <p>Compare against a saved baseline to make sure no individual case
 regressed:</p>
@@ -603,7 +586,7 @@ regressed:</p>
 <span><span class="co">#&gt; No regressions detected.</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="pattern-3-use-benchmark_guardrail-for-quick-checks">Pattern 3: Use benchmark_guardrail() for Quick Checks<a class="anchor" aria-label="anchor" href="#pattern-3-use-benchmark_guardrail-for-quick-checks"></a>
+<h3 id="pattern-3-use-benchmark_guardrail-for-quick-checks">Pattern 3: use benchmark_guardrail() for quick checks<a class="anchor" aria-label="anchor" href="#pattern-3-use-benchmark_guardrail-for-quick-checks"></a>
 </h3>
 <p>For a quick smoke test during development,
 <code><a href="../reference/benchmark_guardrail.html">benchmark_guardrail()</a></code> builds the dataset for you from
@@ -628,7 +611,7 @@ positive and negative case vectors:</p>
 <span><span class="co">#&gt; Quick check -- F1: 1.00, Recall: 1.00</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="pattern-4-pipeline-benchmarking">Pattern 4: Pipeline Benchmarking<a class="anchor" aria-label="anchor" href="#pattern-4-pipeline-benchmarking"></a>
+<h3 id="pattern-4-pipeline-benchmarking">Pattern 4: pipeline benchmarking<a class="anchor" aria-label="anchor" href="#pattern-4-pipeline-benchmarking"></a>
 </h3>
 <p>If you have a multi-stage guardrail pipeline (e.g., first check for
 prompt injection, then check for SQL injection), benchmark the composed
@@ -659,7 +642,7 @@ pipeline:</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="vitals-interop-via-as_vitals_scorer">Vitals Interop via as_vitals_scorer()<a class="anchor" aria-label="anchor" href="#vitals-interop-via-as_vitals_scorer"></a>
+<h2 id="vitals-interop-via-as_vitals_scorer">Vitals interop via as_vitals_scorer()<a class="anchor" aria-label="anchor" href="#vitals-interop-via-as_vitals_scorer"></a>
 </h2>
 <p>The <a href="https://github.com/tidyverse/vitals" class="external-link">vitals</a> package
 provides a standardised evaluation framework for LLM applications.
@@ -667,8 +650,8 @@ provides a standardised evaluation framework for LLM applications.
 function that vitals can use.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">scorer</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_vitals_scorer.html">as_vitals_scorer</a></span><span class="op">(</span><span class="va">improved_guard</span><span class="op">)</span></span></code></pre></div>
-<p>The scorer takes two arguments – <code>input</code> (character) and
-<code>expected</code> (logical) – and returns <code>1</code> for a
+<p>The scorer takes two arguments, <code>input</code> (character) and
+<code>expected</code> (logical), and returns <code>1</code> for a
 correct judgment or <code>0</code> for an incorrect one:</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Correct block: expected=FALSE and guardrail blocked it</span></span>
@@ -686,7 +669,7 @@ correct judgment or <code>0</code> for an incorrect one:</p>
 function, bridging securebench guardrail testing into broader LLM
 evaluation pipelines.</p>
 <div class="section level3">
-<h3 id="using-a-scorer-on-a-dataset">Using a Scorer on a Dataset<a class="anchor" aria-label="anchor" href="#using-a-scorer-on-a-dataset"></a>
+<h3 id="using-a-scorer-on-a-dataset">Using a scorer on a dataset<a class="anchor" aria-label="anchor" href="#using-a-scorer-on-a-dataset"></a>
 </h3>
 <p>You can manually apply the scorer to a dataset to get per-row
 scores:</p>

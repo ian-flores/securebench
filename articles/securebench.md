@@ -1,13 +1,13 @@
 # Getting Started with securebench
 
-## Why Benchmark Guardrails?
+## Why benchmark guardrails?
 
 Every guardrail in an AI agent system makes a binary decision: let the
 input through, or block it. Getting that decision wrong has real
 consequences, and the failure modes cut both ways.
 
 A guardrail that is **too strict** blocks legitimate user requests. Your
-agent becomes frustrating to use – users write normal queries and get
+agent becomes frustrating to use: users write normal queries and get
 rejected. A support chatbot that flags “how do I delete my account?” as
 a SQL injection attack is protecting nothing while alienating everyone.
 This is the **false alarm** problem: the guardrail cries wolf, and
@@ -21,21 +21,19 @@ attack** problem, and in security contexts it is almost always the more
 dangerous failure mode. One missed attack can compromise an entire
 system; a hundred false alarms are merely annoying.
 
-Benchmarking gives you numbers to reason about this trade-off. Instead
-of guessing whether your guardrail is “good enough,” you measure exactly
-how often it makes each type of mistake. securebench provides the tools
-to evaluate any guardrail function against a labeled dataset and compute
-the metrics that matter.
+Benchmarking quantifies this trade-off. Instead of guessing whether your
+guardrail is “good enough,” you measure exactly how often it makes each
+type of mistake. securebench evaluates any guardrail function against a
+labeled dataset and computes the metrics that matter.
 
-## The Metrics: Precision, Recall, and F1
+## The metrics: precision, recall, and F1
 
-Three metrics capture the core trade-off between false alarms and missed
-attacks. Understanding them is essential before looking at any benchmark
-output.
+Three metrics capture the trade-off between false alarms and missed
+attacks. You need to understand them before looking at benchmark output.
 
 **Precision** answers: “Of everything the guardrail flagged as an
 attack, how much actually was an attack?” A precision of 0.90 means 90%
-of the inputs the guardrail blocked were genuinely dangerous – and 10%
+of the inputs the guardrail blocked were genuinely dangerous, and 10%
 were false alarms. High precision means few false alarms, which keeps
 the user experience smooth.
 
@@ -55,9 +53,9 @@ threats) over precision (avoiding false alarms), but the right balance
 depends on your context. An air-gapped code execution sandbox can
 tolerate more false alarms than a customer-facing chatbot.
 
-## The Confusion Matrix
+## The confusion matrix
 
-All four metrics flow from a 2x2 confusion matrix. Here is how it maps
+All four metrics come from a 2x2 confusion matrix. Here is how it maps
 to security outcomes:
 
                             Actual Status
@@ -83,19 +81,19 @@ Reading each cell:
 - **True Negative (bottom-right):** The input was safe and the guardrail
   let it through. This is the ideal outcome for legitimate requests.
 
-The metrics connect directly:
+The formulas:
 
 - Precision = True Positives / (True Positives + False Alarms)
 - Recall = True Positives / (True Positives + Missed Attacks)
 - F1 = 2 \* Precision \* Recall / (Precision + Recall)
 
-## Quick Start: benchmark_guardrail()
+## Quick start: benchmark_guardrail()
 
-Now that you understand what the numbers mean, let’s compute them. The
-fastest path is
+Now that you know what the numbers mean, here is how to compute them.
+The fastest path is
 [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md),
-which takes a guardrail function and two vectors – inputs that should be
-blocked and inputs that should pass:
+which takes a guardrail function and two vectors: inputs that should be
+blocked and inputs that should pass.
 
 ``` r
 library(securebench)
@@ -120,7 +118,7 @@ The `positive_cases` are inputs the guardrail should **block**
 securebench evaluates each one, checks whether the guardrail got it
 right, and computes all four metrics.
 
-## Using Data Frames for More Control
+## Using data frames for more control
 
 For larger or more structured test suites, pass a data frame with
 `input` and `expected` columns. The `expected` column uses the
@@ -139,28 +137,28 @@ m <- guardrail_metrics(result)
 cm <- guardrail_confusion(result)
 ```
 
-The `label` column is optional but recommended – it helps you see which
+The `label` column is optional but recommended; it helps you see which
 *categories* of attack a guardrail struggles with when you generate
 reports.
 
-## Interpreting Results
+## Interpreting results
 
-Once you have metrics, here is how to read them in practice:
+Once you have metrics, here is what they mean in practice:
 
-| Metric           | Value      | Interpretation                              |
-|------------------|------------|---------------------------------------------|
-| Precision = 1.00 | Perfect    | Every block was justified – no false alarms |
-| Precision = 0.50 | Concerning | Half of all blocks were false alarms        |
-| Recall = 1.00    | Perfect    | Every attack was caught                     |
-| Recall = 0.50    | Dangerous  | Half of all attacks slipped through         |
-| F1 = 1.00        | Perfect    | Both precision and recall are perfect       |
-| F1 \< 0.70       | Needs work | Significant imbalance or poor performance   |
+| Metric           | Value      | Interpretation                             |
+|------------------|------------|--------------------------------------------|
+| Precision = 1.00 | Perfect    | Every block was justified, no false alarms |
+| Precision = 0.50 | Concerning | Half of all blocks were false alarms       |
+| Recall = 1.00    | Perfect    | Every attack was caught                    |
+| Recall = 0.50    | Dangerous  | Half of all attacks slipped through        |
+| F1 = 1.00        | Perfect    | Both precision and recall are perfect      |
+| F1 \< 0.70       | Needs work | Significant imbalance or poor performance  |
 
 A common pattern: your guardrail has high recall but low precision
 (catches everything, but also blocks too many safe inputs). The fix is
-usually to make the detection patterns more specific. The reverse – high
-precision, low recall – means the guardrail is confident when it blocks
-but misses many threats. The fix is usually to add more detection
+usually to make the detection patterns more specific. The reverse, high
+precision with low recall, means the guardrail is confident when it
+blocks but misses many threats. The fix is usually to add more detection
 patterns.
 
 ## Reports
@@ -175,16 +173,16 @@ df <- guardrail_report(result, format = "data.frame")
 head(df)
 ```
 
-The console format gives you a quick summary during development. The
-data frame format lets you filter to specific failures, group by label,
-or feed results into downstream analysis.
+The console format prints a quick summary during development. The data
+frame format lets you filter to specific failures, group by label, or
+feed results into downstream analysis.
 
-## Comparing Guardrails
+## Comparing guardrails
 
-When you improve a guardrail, you need to verify the improvement is real
-and that nothing regressed.
+When you change a guardrail, you need to check that the change actually
+helped and that nothing regressed.
 [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md)
-takes a baseline and a new result and quantifies exactly what changed:
+takes a baseline and a new result and shows exactly what changed:
 
 ``` r
 improved_guard <- function(text) {
@@ -202,7 +200,7 @@ The `regressed` count is the most important field: if it is greater than
 zero, the new guardrail broke something that previously worked. Even a
 small regression in recall can mean a real attack vector re-opened.
 
-## Vitals Interop
+## Vitals interop
 
 Export any guardrail as a vitals-compatible scorer for use in broader
 LLM evaluation pipelines:
@@ -213,7 +211,7 @@ scorer("safe query", TRUE)    # 1 (correct)
 scorer("DROP TABLE x", FALSE) # 1 (correct)
 ```
 
-## Pipeline Benchmarking
+## Pipeline benchmarking
 
 Evaluate a full multi-stage guardrail pipeline against a dataset:
 
@@ -226,12 +224,12 @@ result <- benchmark_pipeline(pipeline, data)
 guardrail_metrics(result)
 ```
 
-This is useful when your production guardrail is composed of multiple
-checks (prompt injection, SQL injection, code injection) and you want to
-measure the accuracy of the whole chain.
+Use this when your production guardrail composes multiple checks (prompt
+injection, SQL injection, code injection) and you want to measure the
+accuracy of the whole chain.
 
-## Next Steps
+## Next steps
 
-For deeper testing patterns – regression testing, version comparison
-workflows, and advanced pipeline benchmarking – see
+For deeper testing patterns, including regression testing, version
+comparison workflows, and advanced pipeline benchmarking, see
 [`vignette("testing-patterns")`](https://ian-flores.github.io/securebench/articles/testing-patterns.md).
