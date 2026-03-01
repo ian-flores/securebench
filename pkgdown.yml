@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   securebench: securebench.html
   testing-patterns: testing-patterns.html
-last_built: 2026-02-23T02:47Z
+last_built: 2026-03-01T14:38Z
 urls:
   reference: https://ian-flores.github.io/securebench/reference
   article: https://ian-flores.github.io/securebench/articles
