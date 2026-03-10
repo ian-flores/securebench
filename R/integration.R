@@ -17,22 +17,37 @@
 #' )
 #' metrics$precision
 benchmark_guardrail <- function(guardrail, positive_cases, negative_cases) {
-  if (!is.character(positive_cases)) {
-    cli_abort("{.arg positive_cases} must be a character vector.")
-  }
-  if (!is.character(negative_cases)) {
-    cli_abort("{.arg negative_cases} must be a character vector.")
+  .do_benchmark <- function() {
+    if (!is.character(positive_cases)) {
+      cli_abort("{.arg positive_cases} must be a character vector.")
+    }
+    if (!is.character(negative_cases)) {
+      cli_abort("{.arg negative_cases} must be a character vector.")
+    }
+
+    data <- data.frame(
+      input = c(positive_cases, negative_cases),
+      expected = c(rep(FALSE, length(positive_cases)), rep(TRUE, length(negative_cases))),
+      label = c(rep("positive", length(positive_cases)), rep("negative", length(negative_cases))),
+      stringsAsFactors = FALSE
+    )
+
+    result <- guardrail_eval(guardrail, data)
+    guardrail_metrics(result)
   }
 
-  data <- data.frame(
-    input = c(positive_cases, negative_cases),
-    expected = c(rep(FALSE, length(positive_cases)), rep(TRUE, length(negative_cases))),
-    label = c(rep("positive", length(positive_cases)), rep("negative", length(negative_cases))),
-    stringsAsFactors = FALSE
-  )
-
-  result <- guardrail_eval(guardrail, data)
-  guardrail_metrics(result)
+  if (.trace_active()) {
+    securetrace::with_span("bench.benchmark_guardrail", type = "custom", {
+      result <- .do_benchmark()
+      .span_event("benchmark_guardrail.complete", list(
+        positive_count = length(positive_cases),
+        negative_count = length(negative_cases)
+      ))
+      result
+    })
+  } else {
+    .do_benchmark()
+  }
 }
 
 #' Benchmark a guardrail pipeline end-to-end
@@ -54,12 +69,22 @@ benchmark_guardrail <- function(guardrail, positive_cases, negative_cases) {
 #' result <- benchmark_pipeline(pipeline, data)
 #' guardrail_metrics(result)
 benchmark_pipeline <- function(pipeline, data) {
-  fn <- if (is.function(pipeline)) {
-    pipeline
-  } else if (is.list(pipeline) && is.function(pipeline$run)) {
-    pipeline$run
-  } else {
-    cli_abort("{.arg pipeline} must be a function or an object with a {.fn run} method.")
+  .do_pipeline <- function() {
+    fn <- if (is.function(pipeline)) {
+      pipeline
+    } else if (is.list(pipeline) && is.function(pipeline$run)) {
+      pipeline$run
+    } else {
+      cli_abort("{.arg pipeline} must be a function or an object with a {.fn run} method.")
+    }
+    guardrail_eval(fn, data)
   }
-  guardrail_eval(fn, data)
+
+  if (.trace_active()) {
+    securetrace::with_span("bench.benchmark_pipeline", type = "custom", {
+      .do_pipeline()
+    })
+  } else {
+    .do_pipeline()
+  }
 }

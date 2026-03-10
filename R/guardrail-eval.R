@@ -34,48 +34,66 @@ guardrail_eval_result_class <- S7::new_class("guardrail_eval_result", properties
 #' result <- guardrail_eval(my_guard, data)
 #' guardrail_metrics(result)
 guardrail_eval <- function(guardrail, data) {
-  if (!is.data.frame(data)) {
-    cli_abort("{.arg data} must be a data.frame.")
-  }
-  if (!all(c("input", "expected") %in% names(data))) {
-    cli_abort("{.arg data} must have columns {.field input} and {.field expected}.")
-  }
-  if (!is.character(data$input)) {
-    cli_abort("Column {.field input} must be character.")
-  }
-  if (!is.logical(data$expected)) {
-    cli_abort("Column {.field expected} must be logical.")
+  .do_eval <- function() {
+    if (!is.data.frame(data)) {
+      cli_abort("{.arg data} must be a data.frame.")
+    }
+    if (!all(c("input", "expected") %in% names(data))) {
+      cli_abort("{.arg data} must have columns {.field input} and {.field expected}.")
+    }
+    if (!is.character(data$input)) {
+      cli_abort("Column {.field input} must be character.")
+    }
+    if (!is.logical(data$expected)) {
+      cli_abort("Column {.field expected} must be logical.")
+    }
+
+    check_fn <- if (is.function(guardrail)) {
+      guardrail
+    } else if (is.list(guardrail) && is.function(guardrail$check)) {
+      guardrail$check
+    } else {
+      cli_abort("{.arg guardrail} must be a function or an object with a {.fn check} method.")
+    }
+
+    has_label <- "label" %in% names(data)
+
+    results <- lapply(seq_len(nrow(data)), function(i) {
+      pass <- tryCatch(
+        {
+          result <- check_fn(data$input[[i]])
+          isTRUE(result)
+        },
+        error = function(e) {
+          FALSE
+        }
+      )
+      list(
+        input = data$input[[i]],
+        expected = data$expected[[i]],
+        pass = pass,
+        label = if (has_label) data$label[[i]] else NULL
+      )
+    })
+
+    guardrail_eval_result_class(results = results)
   }
 
-  check_fn <- if (is.function(guardrail)) {
-    guardrail
-  } else if (is.list(guardrail) && is.function(guardrail$check)) {
-    guardrail$check
+  if (.trace_active()) {
+    securetrace::with_span("bench.guardrail_eval", type = "custom", {
+      result <- .do_eval()
+      results_list <- result@results
+      passes <- vapply(results_list, function(r) r$pass, logical(1))
+      .span_event("eval.complete", list(
+        case_count = length(results_list),
+        pass_count = sum(passes),
+        fail_count = sum(!passes)
+      ))
+      result
+    })
   } else {
-    cli_abort("{.arg guardrail} must be a function or an object with a {.fn check} method.")
+    .do_eval()
   }
-
-  has_label <- "label" %in% names(data)
-
-  results <- lapply(seq_len(nrow(data)), function(i) {
-    pass <- tryCatch(
-      {
-        result <- check_fn(data$input[[i]])
-        isTRUE(result)
-      },
-      error = function(e) {
-        FALSE
-      }
-    )
-    list(
-      input = data$input[[i]],
-      expected = data$expected[[i]],
-      pass = pass,
-      label = if (has_label) data$label[[i]] else NULL
-    )
-  })
-
-  guardrail_eval_result_class(results = results)
 }
 
 #' Compute guardrail evaluation metrics
@@ -103,49 +121,66 @@ guardrail_eval <- function(guardrail, data) {
 #' m$precision
 #' m$recall
 guardrail_metrics <- function(eval_result) {
-  if (!S7::S7_inherits(eval_result, guardrail_eval_result_class)) {
-    cli_abort("{.arg eval_result} must be a {.cls guardrail_eval_result}.")
-  }
-
-  tp <- 0L
-  tn <- 0L
-  fp <- 0L
-  fn <- 0L
-
-  for (r in eval_result@results) {
-    expected_pass <- isTRUE(r$expected)
-    actual_pass <- isTRUE(r$pass)
-    if (!expected_pass && !actual_pass) {
-      tp <- tp + 1L
-    } else if (expected_pass && actual_pass) {
-      tn <- tn + 1L
-    } else if (expected_pass && !actual_pass) {
-      fp <- fp + 1L
-    } else {
-      fn <- fn + 1L
+  .do_metrics <- function() {
+    if (!S7::S7_inherits(eval_result, guardrail_eval_result_class)) {
+      cli_abort("{.arg eval_result} must be a {.cls guardrail_eval_result}.")
     }
+
+    tp <- 0L
+    tn <- 0L
+    fp <- 0L
+    fn <- 0L
+
+    for (r in eval_result@results) {
+      expected_pass <- isTRUE(r$expected)
+      actual_pass <- isTRUE(r$pass)
+      if (!expected_pass && !actual_pass) {
+        tp <- tp + 1L
+      } else if (expected_pass && actual_pass) {
+        tn <- tn + 1L
+      } else if (expected_pass && !actual_pass) {
+        fp <- fp + 1L
+      } else {
+        fn <- fn + 1L
+      }
+    }
+
+    precision <- if ((tp + fp) == 0) NA_real_ else tp / (tp + fp)
+    recall <- if ((tp + fn) == 0) NA_real_ else tp / (tp + fn)
+    f1 <- if (is.na(precision) || is.na(recall) || (precision + recall) == 0) {
+      NA_real_
+    } else {
+      2 * precision * recall / (precision + recall)
+    }
+    total <- tp + tn + fp + fn
+    accuracy <- if (total == 0) NA_real_ else (tp + tn) / total
+
+    list(
+      true_positives = tp,
+      true_negatives = tn,
+      false_positives = fp,
+      false_negatives = fn,
+      precision = precision,
+      recall = recall,
+      f1 = f1,
+      accuracy = accuracy
+    )
   }
 
-  precision <- if ((tp + fp) == 0) NA_real_ else tp / (tp + fp)
-  recall <- if ((tp + fn) == 0) NA_real_ else tp / (tp + fn)
-  f1 <- if (is.na(precision) || is.na(recall) || (precision + recall) == 0) {
-    NA_real_
+  if (.trace_active()) {
+    securetrace::with_span("bench.guardrail_metrics", type = "custom", {
+      result <- .do_metrics()
+      .span_event("metrics.complete", list(
+        precision = result$precision,
+        recall = result$recall,
+        f1 = result$f1,
+        accuracy = result$accuracy
+      ))
+      result
+    })
   } else {
-    2 * precision * recall / (precision + recall)
+    .do_metrics()
   }
-  total <- tp + tn + fp + fn
-  accuracy <- if (total == 0) NA_real_ else (tp + tn) / total
-
-  list(
-    true_positives = tp,
-    true_negatives = tn,
-    false_positives = fp,
-    false_negatives = fn,
-    precision = precision,
-    recall = recall,
-    f1 = f1,
-    accuracy = accuracy
-  )
 }
 
 #' Create a confusion matrix from guardrail evaluation
@@ -193,42 +228,58 @@ guardrail_confusion <- function(eval_result) {
 #' r2 <- guardrail_eval(guard_v2, data)
 #' guardrail_compare(r1, r2)
 guardrail_compare <- function(baseline, comparison) {
-  if (!S7::S7_inherits(baseline, guardrail_eval_result_class)) {
-    cli_abort("{.arg baseline} must be a {.cls guardrail_eval_result}.")
-  }
-  if (!S7::S7_inherits(comparison, guardrail_eval_result_class)) {
-    cli_abort("{.arg comparison} must be a {.cls guardrail_eval_result}.")
-  }
-
-  m1 <- guardrail_metrics(baseline)
-  m2 <- guardrail_metrics(comparison)
-
-  n <- min(length(baseline@results), length(comparison@results))
-  improved <- 0L
-  regressed <- 0L
-  unchanged <- 0L
-
-  for (i in seq_len(n)) {
-    correct1 <- isTRUE(baseline@results[[i]]$expected) == isTRUE(baseline@results[[i]]$pass)
-    correct2 <- isTRUE(comparison@results[[i]]$expected) == isTRUE(comparison@results[[i]]$pass)
-    if (correct2 && !correct1) {
-      improved <- improved + 1L
-    } else if (!correct2 && correct1) {
-      regressed <- regressed + 1L
-    } else {
-      unchanged <- unchanged + 1L
+  .do_compare <- function() {
+    if (!S7::S7_inherits(baseline, guardrail_eval_result_class)) {
+      cli_abort("{.arg baseline} must be a {.cls guardrail_eval_result}.")
     }
+    if (!S7::S7_inherits(comparison, guardrail_eval_result_class)) {
+      cli_abort("{.arg comparison} must be a {.cls guardrail_eval_result}.")
+    }
+
+    m1 <- guardrail_metrics(baseline)
+    m2 <- guardrail_metrics(comparison)
+
+    n <- min(length(baseline@results), length(comparison@results))
+    improved <- 0L
+    regressed <- 0L
+    unchanged <- 0L
+
+    for (i in seq_len(n)) {
+      correct1 <- isTRUE(baseline@results[[i]]$expected) == isTRUE(baseline@results[[i]]$pass)
+      correct2 <- isTRUE(comparison@results[[i]]$expected) == isTRUE(comparison@results[[i]]$pass)
+      if (correct2 && !correct1) {
+        improved <- improved + 1L
+      } else if (!correct2 && correct1) {
+        regressed <- regressed + 1L
+      } else {
+        unchanged <- unchanged + 1L
+      }
+    }
+
+    list(
+      delta_precision = m2$precision - m1$precision,
+      delta_recall = m2$recall - m1$recall,
+      delta_f1 = m2$f1 - m1$f1,
+      delta_accuracy = m2$accuracy - m1$accuracy,
+      improved = improved,
+      regressed = regressed,
+      unchanged = unchanged
+    )
   }
 
-  list(
-    delta_precision = m2$precision - m1$precision,
-    delta_recall = m2$recall - m1$recall,
-    delta_f1 = m2$f1 - m1$f1,
-    delta_accuracy = m2$accuracy - m1$accuracy,
-    improved = improved,
-    regressed = regressed,
-    unchanged = unchanged
-  )
+  if (.trace_active()) {
+    securetrace::with_span("bench.guardrail_compare", type = "custom", {
+      result <- .do_compare()
+      .span_event("compare.complete", list(
+        improved = result$improved,
+        regressed = result$regressed,
+        unchanged = result$unchanged
+      ))
+      result
+    })
+  } else {
+    .do_compare()
+  }
 }
 
 method(print, guardrail_eval_result_class) <- function(x, ...) {
