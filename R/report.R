@@ -17,7 +17,7 @@ guardrail_report <- function(eval_result, format = c("console", "data.frame")) {
   if (!S7::S7_inherits(eval_result, guardrail_eval_result_class)) {
     cli_abort("{.arg eval_result} must be a {.cls guardrail_eval_result}.")
   }
-  format <- match.arg(format)
+  format <- rlang::arg_match(format)
 
   if (format == "data.frame") {
     rows <- lapply(eval_result@results, function(r) {
