@@ -24,3 +24,8 @@ reference:
   - title: Vitals Interop
     contents:
       - as_vitals_scorer
+
+  - title: Bundled Reference Datasets
+    contents:
+      - load_reference
+      - reference_datasets
