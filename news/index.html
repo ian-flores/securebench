@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">securebench</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,16 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="securebench-020">securebench 0.2.0<a class="anchor" aria-label="anchor" href="#securebench-020"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
+<ul><li>
+<code>load_reference(name)</code> — loads one of three small synthetic labeled datasets bundled in <code>inst/extdata/</code>: <code>"injection_basic"</code>, <code>"pii_basic"</code>, <code>"secrets_basic"</code>. Each is a <code>data.frame(input,   expected, label)</code> ready for <code><a href="../reference/guardrail_eval.html">guardrail_eval()</a></code>. Intended for smoke tests and templates; bring your own production-shaped data for serious evaluations.</li>
+<li>
+<code><a href="../reference/reference_datasets.html">reference_datasets()</a></code> — lists the available dataset names.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="securebench-010">securebench 0.1.0<a class="anchor" aria-label="anchor" href="#securebench-010"></a></h2>
 <ul><li>Initial CRAN release.</li>
 <li>Renamed from secureeval; refocused on guardrail benchmarking.</li>
@@ -45,7 +55,8 @@
 <li>Core exports: <code><a href="../reference/guardrail_eval.html">guardrail_eval()</a></code>, <code><a href="../reference/guardrail_metrics.html">guardrail_metrics()</a></code>, <code><a href="../reference/guardrail_confusion.html">guardrail_confusion()</a></code>, <code><a href="../reference/guardrail_compare.html">guardrail_compare()</a></code>, <code><a href="../reference/guardrail_report.html">guardrail_report()</a></code>, <code><a href="../reference/benchmark_guardrail.html">benchmark_guardrail()</a></code>, <code><a href="../reference/benchmark_pipeline.html">benchmark_pipeline()</a></code>, <code><a href="../reference/as_vitals_scorer.html">as_vitals_scorer()</a></code>.</li>
 <li>Input format: plain data.frame with <code>input</code>, <code>expected</code>, optional <code>label</code> columns.</li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

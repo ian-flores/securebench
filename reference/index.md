@@ -29,3 +29,10 @@
 
 - [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md)
   : Wrap a guardrail as a vitals-compatible scorer
+
+## Bundled Reference Datasets
+
+- [`load_reference()`](https://ian-flores.github.io/securebench/reference/load_reference.md)
+  : Bundled reference datasets for guardrail benchmarking
+- [`reference_datasets()`](https://ian-flores.github.io/securebench/reference/reference_datasets.md)
+  : List available reference dataset names
