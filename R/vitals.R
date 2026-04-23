@@ -15,16 +15,13 @@
 #' scorer("safe query", TRUE)   # 1 (correct: expected pass, got pass)
 #' scorer("DROP TABLE x", FALSE) # 1 (correct: expected block, got block)
 as_vitals_scorer <- function(guardrail) {
-  check_fn <- if (is.function(guardrail)) {
-    guardrail
-  } else if (is.list(guardrail) && is.function(guardrail$check)) {
-    guardrail$check
-  } else {
-    cli_abort("{.arg guardrail} must be a function or an object with a {.fn check} method.")
-  }
+  check_fn <- .resolve_check_fn(guardrail)
 
   function(input, expected) {
-    pass <- tryCatch(isTRUE(check_fn(input)), error = function(e) FALSE)
+    pass <- tryCatch(
+      .as_pass_logical(check_fn(input)),
+      error = function(e) FALSE
+    )
     correct <- isTRUE(expected) == pass
     if (correct) 1 else 0
   }

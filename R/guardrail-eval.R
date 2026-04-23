@@ -12,6 +12,36 @@ guardrail_eval_result_class <- S7::new_class("guardrail_eval_result", properties
   results = S7::class_list
 ))
 
+# Resolve a guardrail-like argument to a unary check function.
+# Accepts: bare functions; lists exposing `$check` or `$run`; secureguard
+# S7 guardrails (detected by their `check_fn` property).
+.resolve_check_fn <- function(guardrail) {
+  if (is.function(guardrail)) return(guardrail)
+  if (is.list(guardrail)) {
+    if (is.function(guardrail$check)) return(guardrail$check)
+    if (is.function(guardrail$run))   return(guardrail$run)
+  }
+  # secureguard S7 guardrail: has a `check_fn` property we can reach via @
+  s7_fn <- tryCatch(guardrail@check_fn, error = function(e) NULL)
+  if (is.function(s7_fn)) return(s7_fn)
+  cli_abort(
+    "{.arg guardrail} must be a function, a list with a {.fn check} or
+     {.fn run} method, or a secureguard-style S7 guardrail with a
+     {.field check_fn} property."
+  )
+}
+
+# Coerce a guardrail result value to a single logical `pass`.
+# Accepts: raw logical; secureguard `guardrail_result` S7 object with
+# `@pass`; lists with a `$pass` slot.
+.as_pass_logical <- function(result) {
+  if (is.logical(result) && length(result) == 1L) return(isTRUE(result))
+  s7_pass <- tryCatch(result@pass, error = function(e) NULL)
+  if (is.logical(s7_pass) && length(s7_pass) == 1L) return(isTRUE(s7_pass))
+  if (is.list(result) && !is.null(result$pass)) return(isTRUE(result$pass))
+  isTRUE(result)
+}
+
 #' Evaluate a guardrail against a dataset
 #'
 #' Runs a guardrail function against each row in a data frame.
@@ -48,13 +78,7 @@ guardrail_eval <- function(guardrail, data) {
       cli_abort("Column {.field expected} must be logical.")
     }
 
-    check_fn <- if (is.function(guardrail)) {
-      guardrail
-    } else if (is.list(guardrail) && is.function(guardrail$check)) {
-      guardrail$check
-    } else {
-      cli_abort("{.arg guardrail} must be a function or an object with a {.fn check} method.")
-    }
+    check_fn <- .resolve_check_fn(guardrail)
 
     has_label <- "label" %in% names(data)
 
@@ -62,7 +86,7 @@ guardrail_eval <- function(guardrail, data) {
       pass <- tryCatch(
         {
           result <- check_fn(data$input[[i]])
-          isTRUE(result)
+          .as_pass_logical(result)
         },
         error = function(e) {
           FALSE
