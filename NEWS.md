@@ -1,3 +1,15 @@
+# securebench 0.2.0
+
+## New features
+
+* `load_reference(name)` — loads one of three small synthetic labeled
+  datasets bundled in `inst/extdata/`: `"injection_basic"`,
+  `"pii_basic"`, `"secrets_basic"`. Each is a `data.frame(input,
+  expected, label)` ready for `guardrail_eval()`. Intended for smoke
+  tests and templates; bring your own production-shaped data for
+  serious evaluations.
+* `reference_datasets()` — lists the available dataset names.
+
 # securebench 0.1.0
 
 * Initial CRAN release.
