@@ -1,6 +1,6 @@
 Package: securebench
 Title: Guardrail Benchmarking for Large Language Model Agents
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person("Ian", "Flores Siaca", , "iflores.siaca@hey.com", role = c("aut", "cre", "cph"))
 Description: Benchmarking framework for guardrail accuracy in R Large
@@ -17,7 +17,8 @@ Depends:
 Imports:
     cli (>= 3.0.0),
     rlang (>= 1.0.0),
-    S7 (>= 0.2.0)
+    S7 (>= 0.2.0),
+    utils
 Suggests:
     knitr,
     rmarkdown,
