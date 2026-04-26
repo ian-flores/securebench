@@ -1,5 +1,22 @@
 # Changelog
 
+## securebench 0.2.1
+
+### Bundled dataset convention fix
+
+- The `expected` column in all three bundled reference datasets
+  (`injection_basic`, `pii_basic`, `secrets_basic`) was inverted
+  relative to the package’s documented convention (`expected = TRUE`
+  means the row should be allowed through; `expected = FALSE` means it
+  should be blocked). Out-of-the-box runs of
+  [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md)
+  on these datasets produced NaN precision/recall because the ground
+  truth was flipped. Datasets now match the convention;
+  [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md)
+  returns proper scores against any guardrail that meaningfully blocks
+  threats and allows benign inputs. Callers who had compensated for the
+  old convention need to invert their handling.
+
 ## securebench 0.2.0
 
 ### New features

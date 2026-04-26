@@ -10,13 +10,13 @@ Source:
 [`DESCRIPTION`](https://github.com/ian-flores/securebench/blob/main/DESCRIPTION)
 
 Flores Siaca I (2026). *securebench: Guardrail Benchmarking for Large
-Language Model Agents*. R package version 0.2.0,
+Language Model Agents*. R package version 0.2.1,
 <https://ian-flores.github.io/securebench/>.
 
     @Manual{,
       title = {securebench: Guardrail Benchmarking for Large Language Model Agents},
       author = {Ian {Flores Siaca}},
       year = {2026},
-      note = {R package version 0.2.0},
+      note = {R package version 0.2.1},
       url = {https://ian-flores.github.io/securebench/},
     }

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">securebench</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,13 @@
       <small>Source: <a href="https://github.com/ian-flores/securebench/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.1" id="securebench-021">securebench 0.2.1<a class="anchor" aria-label="anchor" href="#securebench-021"></a></h2>
+<div class="section level3">
+<h3 id="bundled-dataset-convention-fix-0-2-1">Bundled dataset convention fix<a class="anchor" aria-label="anchor" href="#bundled-dataset-convention-fix-0-2-1"></a></h3>
+<ul><li>The <code>expected</code> column in all three bundled reference datasets (<code>injection_basic</code>, <code>pii_basic</code>, <code>secrets_basic</code>) was inverted relative to the package’s documented convention (<code>expected = TRUE</code> means the row should be allowed through; <code>expected = FALSE</code> means it should be blocked). Out-of-the-box runs of <code><a href="../reference/guardrail_eval.html">guardrail_eval()</a></code> on these datasets produced NaN precision/recall because the ground truth was flipped. Datasets now match the convention; <code><a href="../reference/guardrail_metrics.html">guardrail_metrics()</a></code> returns proper scores against any guardrail that meaningfully blocks threats and allows benign inputs. Callers who had compensated for the old convention need to invert their handling.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="securebench-020">securebench 0.2.0<a class="anchor" aria-label="anchor" href="#securebench-020"></a></h2>
 <div class="section level3">
