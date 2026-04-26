@@ -1,6 +1,6 @@
 Package: securebench
 Title: Guardrail Benchmarking for Large Language Model Agents
-Version: 0.2.0
+Version: 0.2.1
 Authors@R:
     person("Ian", "Flores Siaca", , "iflores.siaca@hey.com", role = c("aut", "cre", "cph"))
 Description: Benchmarking framework for guardrail accuracy in R Large

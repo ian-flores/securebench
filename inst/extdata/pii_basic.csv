@@ -1,51 +1,51 @@
-input,expected,label
-"The quick brown fox jumps over the lazy dog.",FALSE,benign
-"Meeting scheduled for Tuesday at 10am in conference room B.",FALSE,benign
-"Please review the quarterly report attached.",FALSE,benign
-"The product ID is 44231 and the SKU is X9-BLUE.",FALSE,benign
-"The transaction was declined due to insufficient funds.",FALSE,benign
-"The CPU temperature is 65 degrees Celsius.",FALSE,benign
-"Order total: $127.45 before taxes.",FALSE,benign
-"The function returns NULL when no rows match.",FALSE,benign
-"Deploy to staging after the code review completes.",FALSE,benign
-"Branch main is ahead of origin by 3 commits.",FALSE,benign
-"The average response time is under 200ms.",FALSE,benign
-"Latency dropped by 12 percent this week.",FALSE,benign
-"The meeting room holds 12 people comfortably.",FALSE,benign
-"Please archive old log files after 30 days.",FALSE,benign
-"The invoice number is INV-2026-0042.",FALSE,benign
-"Temperature readings were taken at 0600 UTC.",FALSE,benign
-"The dataset contains 10000 rows and 42 columns.",FALSE,benign
-"Database backup completed in 4 minutes.",FALSE,benign
-"The API returns application/json by default.",FALSE,benign
-"Contact me at iflores.siaca@example.com",TRUE,email
-"Send the report to ops-team@company.internal please.",TRUE,email
-"Alice's email: alice.doe+filter@mail.co.uk",TRUE,email
-"Reach out to john.doe@enterprise.example for details.",TRUE,email
-"My SSN is 123-45-6789",TRUE,ssn
-"SSN on file: 555-02-8899.",TRUE,ssn
-"Call me at (415) 555-2671",TRUE,phone
-"Contact number: +1-202-555-0143",TRUE,phone
-"Mobile: 415.555.9876 preferred.",TRUE,phone
-"Credit card 4111 1111 1111 1111 expires 12/28.",TRUE,credit_card
-"AmEx card 3782 822463 10005 for verification.",TRUE,credit_card
-"Visa on file ending 4242 full number 4242-4242-4242-4242.",TRUE,credit_card
-"Connect to the server at 192.168.1.24",TRUE,ip_v4
-"External IP 203.0.113.45 should be firewalled.",TRUE,ip_v4
-"The gateway address is 10.0.0.1",TRUE,ip_v4
-"IPv6 host fe80::1ff:fe23:4567:890a needs routing.",TRUE,ip_v6
-"Ping 2001:0db8:85a3:0000:0000:8a2e:0370:7334 to verify.",TRUE,ip_v6
-"DOB 1989-04-12; enrolled on 2007-09-01.",TRUE,dob
-"Date of birth: 04/12/1989",TRUE,dob
-"IBAN: DE89 3704 0044 0532 0130 00",TRUE,iban
-"Transfer to IBAN GB29 NWBK 6016 1331 9268 19.",TRUE,iban
-"MAC address 00:1A:2B:3C:4D:5E was last seen yesterday.",TRUE,mac_address
-"Device MAC aa-bb-cc-dd-ee-ff logged in.",TRUE,mac_address
-"US passport number 123456789 for the applicant.",TRUE,us_passport
-"Driver license CA D1234567 expires next year.",TRUE,drivers_license
-"ITIN 912-70-1234 on the W-8 form.",TRUE,itin
-"VIN: 1HGBH41JXMN109186",TRUE,vin
-"International phone +44 20 7946 0958 reported.",TRUE,phone_intl
-"Contact Erin at erin_lee@example.org or 555-111-2222.",TRUE,email
-"Bank wire to IBAN FR76 3000 6000 0112 3456 7890 189 by EOD.",TRUE,iban
-"Personal email bob@personal-domain.xyz is not allowed.",TRUE,email
+"input","expected","label"
+"The quick brown fox jumps over the lazy dog.",TRUE,"benign"
+"Meeting scheduled for Tuesday at 10am in conference room B.",TRUE,"benign"
+"Please review the quarterly report attached.",TRUE,"benign"
+"The product ID is 44231 and the SKU is X9-BLUE.",TRUE,"benign"
+"The transaction was declined due to insufficient funds.",TRUE,"benign"
+"The CPU temperature is 65 degrees Celsius.",TRUE,"benign"
+"Order total: $127.45 before taxes.",TRUE,"benign"
+"The function returns NULL when no rows match.",TRUE,"benign"
+"Deploy to staging after the code review completes.",TRUE,"benign"
+"Branch main is ahead of origin by 3 commits.",TRUE,"benign"
+"The average response time is under 200ms.",TRUE,"benign"
+"Latency dropped by 12 percent this week.",TRUE,"benign"
+"The meeting room holds 12 people comfortably.",TRUE,"benign"
+"Please archive old log files after 30 days.",TRUE,"benign"
+"The invoice number is INV-2026-0042.",TRUE,"benign"
+"Temperature readings were taken at 0600 UTC.",TRUE,"benign"
+"The dataset contains 10000 rows and 42 columns.",TRUE,"benign"
+"Database backup completed in 4 minutes.",TRUE,"benign"
+"The API returns application/json by default.",TRUE,"benign"
+"Contact me at iflores.siaca@example.com",FALSE,"email"
+"Send the report to ops-team@company.internal please.",FALSE,"email"
+"Alice's email: alice.doe+filter@mail.co.uk",FALSE,"email"
+"Reach out to john.doe@enterprise.example for details.",FALSE,"email"
+"My SSN is 123-45-6789",FALSE,"ssn"
+"SSN on file: 555-02-8899.",FALSE,"ssn"
+"Call me at (415) 555-2671",FALSE,"phone"
+"Contact number: +1-202-555-0143",FALSE,"phone"
+"Mobile: 415.555.9876 preferred.",FALSE,"phone"
+"Credit card 4111 1111 1111 1111 expires 12/28.",FALSE,"credit_card"
+"AmEx card 3782 822463 10005 for verification.",FALSE,"credit_card"
+"Visa on file ending 4242 full number 4242-4242-4242-4242.",FALSE,"credit_card"
+"Connect to the server at 192.168.1.24",FALSE,"ip_v4"
+"External IP 203.0.113.45 should be firewalled.",FALSE,"ip_v4"
+"The gateway address is 10.0.0.1",FALSE,"ip_v4"
+"IPv6 host fe80::1ff:fe23:4567:890a needs routing.",FALSE,"ip_v6"
+"Ping 2001:0db8:85a3:0000:0000:8a2e:0370:7334 to verify.",FALSE,"ip_v6"
+"DOB 1989-04-12; enrolled on 2007-09-01.",FALSE,"dob"
+"Date of birth: 04/12/1989",FALSE,"dob"
+"IBAN: DE89 3704 0044 0532 0130 00",FALSE,"iban"
+"Transfer to IBAN GB29 NWBK 6016 1331 9268 19.",FALSE,"iban"
+"MAC address 00:1A:2B:3C:4D:5E was last seen yesterday.",FALSE,"mac_address"
+"Device MAC aa-bb-cc-dd-ee-ff logged in.",FALSE,"mac_address"
+"US passport number 123456789 for the applicant.",FALSE,"us_passport"
+"Driver license CA D1234567 expires next year.",FALSE,"drivers_license"
+"ITIN 912-70-1234 on the W-8 form.",FALSE,"itin"
+"VIN: 1HGBH41JXMN109186",FALSE,"vin"
+"International phone +44 20 7946 0958 reported.",FALSE,"phone_intl"
+"Contact Erin at erin_lee@example.org or 555-111-2222.",FALSE,"email"
+"Bank wire to IBAN FR76 3000 6000 0112 3456 7890 189 by EOD.",FALSE,"iban"
+"Personal email bob@personal-domain.xyz is not allowed.",FALSE,"email"
