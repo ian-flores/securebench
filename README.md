@@ -7,8 +7,8 @@
 [![pkgdown](https://github.com/ian-flores/securebench/actions/workflows/pkgdown.yaml/badge.svg)](https://ian-flores.github.io/securebench/)
 <!-- badges: end -->
 
-> [!CAUTION]
-> **Alpha software.** This package is part of a broader effort by [Ian Flores Siaca](https://github.com/ian-flores) to develop proper AI infrastructure for the R ecosystem. It is under active development and should **not** be used in production until an official release is published. APIs may change without notice.
+> [!NOTE]
+> Experimental release. APIs may change before the 1.0 stabilization; track the lifecycle badge above for the current tier.
 
 Benchmarking framework for guardrail accuracy in R LLM agent workflows. Evaluate guardrails against labeled datasets, compute precision/recall/F1 metrics, generate confusion matrices, compare results across iterations, and export as vitals-compatible scorers.
 
