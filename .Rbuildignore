@@ -8,3 +8,4 @@
 ^\.gitignore$
 ^cran-comments\.md$
 ^\.claude$
+^_pkgdown\.yaml$
