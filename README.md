@@ -7,8 +7,7 @@
 [![pkgdown](https://github.com/ian-flores/securebench/actions/workflows/pkgdown.yaml/badge.svg)](https://ian-flores.github.io/securebench/)
 <!-- badges: end -->
 
-> [!NOTE]
-> Experimental release. APIs may change before the 1.0 stabilization; track the lifecycle badge above for the current tier.
+> **Note:** Experimental release. APIs may change before the 1.0 stabilization — track the lifecycle badge above for the current tier.
 
 Benchmarking framework for guardrail accuracy in R LLM agent workflows. Evaluate guardrails against labeled datasets, compute precision/recall/F1 metrics, generate confusion matrices, compare results across iterations, and export as vitals-compatible scorers.
 
@@ -28,6 +27,23 @@ When you build guardrails, you need to know if they actually work. securebench g
 | `benchmark_guardrail()` | Quick-start: benchmark from positive/negative case vectors |
 | `benchmark_pipeline()` | Evaluate a full secureguard pipeline end-to-end |
 | `as_vitals_scorer()` | Convert any guardrail to a vitals-compatible scorer function |
+| `load_reference()` | Load a bundled labeled dataset (`injection_basic`, `pii_basic`, `secrets_basic`) |
+| `reference_datasets()` | List the names of bundled datasets |
+
+## Bundled Reference Datasets
+
+Three small synthetic labeled datasets ship in `inst/extdata/` so you can smoke-test guardrails without writing your own corpus first. Each is a `data.frame` with `input` (character), `expected` (logical: `TRUE` means the guardrail should let the row through, `FALSE` means it should block), and `label` (category tag).
+
+```r
+library(secureguard)
+library(securebench)
+
+df <- load_reference("injection_basic")
+res <- guardrail_eval(guard_prompt_injection(), df)
+guardrail_metrics(res)
+```
+
+Available datasets: `injection_basic` (~50 rows of prompt-injection vs benign), `pii_basic` (~50 rows of email/SSN/IBAN/MAC/etc. vs benign), `secrets_basic` (~50 rows of leaked-credential shapes vs benign). Tokens that look like real cloud-provider keys are masked with `EXAMPLE` markers so the bundled CSV doesn't trip GitHub's secret scanner. These are smoke-test fixtures, not production benchmarks — bring your own labeled corpus for serious evaluation.
 
 ## Part of the secure-r-dev Ecosystem
 
