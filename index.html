@@ -59,7 +59,7 @@
 <!-- badges: start -->
 
 <blockquote>
-<p>[!NOTE] Experimental release. APIs may change before the 1.0 stabilization; track the lifecycle badge above for the current tier.</p>
+<p><strong>Note:</strong> Experimental release. APIs may change before the 1.0 stabilization — track the lifecycle badge above for the current tier.</p>
 </blockquote>
 <p>Benchmarking framework for guardrail accuracy in R LLM agent workflows. Evaluate guardrails against labeled datasets, compute precision/recall/F1 metrics, generate confusion matrices, compare results across iterations, and export as vitals-compatible scorers.</p>
 <div class="section level2">
@@ -75,45 +75,66 @@
 <col width="43%">
 <col width="56%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th>Function</th>
 <th>Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/guardrail_eval.html">guardrail_eval()</a></code></td>
 <td>Evaluate a guardrail against a labeled data frame</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/guardrail_metrics.html">guardrail_metrics()</a></code></td>
 <td>Compute precision, recall, F1, and accuracy</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/guardrail_confusion.html">guardrail_confusion()</a></code></td>
 <td>Generate a 2x2 confusion matrix</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/guardrail_compare.html">guardrail_compare()</a></code></td>
 <td>Compare two guardrails with delta metrics and per-case diffs</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/guardrail_report.html">guardrail_report()</a></code></td>
 <td>Print a formatted report or return results as a data frame</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/benchmark_guardrail.html">benchmark_guardrail()</a></code></td>
 <td>Quick-start: benchmark from positive/negative case vectors</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/benchmark_pipeline.html">benchmark_pipeline()</a></code></td>
 <td>Evaluate a full secureguard pipeline end-to-end</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/as_vitals_scorer.html">as_vitals_scorer()</a></code></td>
 <td>Convert any guardrail to a vitals-compatible scorer function</td>
 </tr>
+<tr>
+<td><code><a href="reference/load_reference.html">load_reference()</a></code></td>
+<td>Load a bundled labeled dataset (<code>injection_basic</code>, <code>pii_basic</code>, <code>secrets_basic</code>)</td>
+</tr>
+<tr>
+<td><code><a href="reference/reference_datasets.html">reference_datasets()</a></code></td>
+<td>List the names of bundled datasets</td>
+</tr>
 </tbody>
 </table>
+</div>
+<div class="section level2">
+<h2 id="bundled-reference-datasets">Bundled Reference Datasets<a class="anchor" aria-label="anchor" href="#bundled-reference-datasets"></a>
+</h2>
+<p>Three small synthetic labeled datasets ship in <code>inst/extdata/</code> so you can smoke-test guardrails without writing your own corpus first. Each is a <code>data.frame</code> with <code>input</code> (character), <code>expected</code> (logical: <code>TRUE</code> means the guardrail should let the row through, <code>FALSE</code> means it should block), and <code>label</code> (category tag).</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/secureguard/" class="external-link">secureguard</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/securebench/">securebench</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/load_reference.html">load_reference</a></span><span class="op">(</span><span class="st">"injection_basic"</span><span class="op">)</span></span>
+<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/guardrail_eval.html">guardrail_eval</a></span><span class="op">(</span><span class="fu"><a href="https://ian-flores.github.io/secureguard/reference/guard_prompt_injection.html" class="external-link">guard_prompt_injection</a></span><span class="op">(</span><span class="op">)</span>, <span class="va">df</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/guardrail_metrics.html">guardrail_metrics</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span></code></pre></div>
+<p>Available datasets: <code>injection_basic</code> (~50 rows of prompt-injection vs benign), <code>pii_basic</code> (~50 rows of email/SSN/IBAN/MAC/etc. vs benign), <code>secrets_basic</code> (~50 rows of leaked-credential shapes vs benign). Tokens that look like real cloud-provider keys are masked with <code>EXAMPLE</code> markers so the bundled CSV doesn’t trip GitHub’s secret scanner. These are smoke-test fixtures, not production benchmarks — bring your own labeled corpus for serious evaluation.</p>
 </div>
 <div class="section level2">
 <h2 id="part-of-the-secure-r-dev-ecosystem">Part of the secure-r-dev Ecosystem<a class="anchor" aria-label="anchor" href="#part-of-the-secure-r-dev-ecosystem"></a>
@@ -142,36 +163,36 @@
 <col width="60%">
 <col width="40%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th>Package</th>
 <th>Role</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><a href="https://github.com/ian-flores/securer" class="external-link">securer</a></td>
 <td>Sandboxed R execution with tool-call IPC</td>
 </tr>
-<tr class="even">
+<tr>
 <td><a href="https://github.com/ian-flores/securetools" class="external-link">securetools</a></td>
 <td>Pre-built security-hardened tool definitions</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><a href="https://github.com/ian-flores/secureguard" class="external-link">secureguard</a></td>
 <td>Input/code/output guardrails (injection, PII, secrets)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><a href="https://github.com/ian-flores/orchestr" class="external-link">orchestr</a></td>
 <td>Graph-based agent orchestration</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><a href="https://github.com/ian-flores/securecontext" class="external-link">securecontext</a></td>
 <td>Document chunking, embeddings, RAG retrieval</td>
 </tr>
-<tr class="even">
+<tr>
 <td><a href="https://github.com/ian-flores/securetrace" class="external-link">securetrace</a></td>
 <td>Structured tracing, token/cost accounting, JSONL export</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><a href="https://github.com/ian-flores/securebench" class="external-link">securebench</a></td>
 <td>Guardrail benchmarking with precision/recall/F1 metrics</td>
 </tr>
@@ -181,14 +202,14 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"ian-flores/securebench"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/securebench/">securebench</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Benchmark a guardrail with known positive/negative cases</span></span>
@@ -206,7 +227,7 @@
 <div class="section level2">
 <h2 id="data-frame-api">Data Frame API<a class="anchor" aria-label="anchor" href="#data-frame-api"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normal text"</span>, <span class="st">"DROP TABLE users"</span><span class="op">)</span>,</span>
 <span>  expected <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">FALSE</span><span class="op">)</span>,</span>
@@ -221,7 +242,7 @@
 <div class="section level2">
 <h2 id="vitals-interop">Vitals Interop<a class="anchor" aria-label="anchor" href="#vitals-interop"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">scorer</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/as_vitals_scorer.html">as_vitals_scorer</a></span><span class="op">(</span><span class="va">my_guardrail</span><span class="op">)</span></span>
 <span><span class="fu">scorer</span><span class="op">(</span><span class="st">"safe query"</span>, <span class="cn">TRUE</span><span class="op">)</span>    <span class="co"># 1 (correct)</span></span>
 <span><span class="fu">scorer</span><span class="op">(</span><span class="st">"DROP TABLE x"</span>, <span class="cn">FALSE</span><span class="op">)</span> <span class="co"># 1 (correct)</span></span></code></pre></div>
@@ -229,7 +250,7 @@
 <div class="section level2">
 <h2 id="comparing-guardrails">Comparing Guardrails<a class="anchor" aria-label="anchor" href="#comparing-guardrails"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define test data</span></span>
 <span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hello"</span>, <span class="st">"how are you?"</span>, <span class="st">"DROP TABLE users"</span>, <span class="st">"'; DELETE FROM accounts"</span><span class="op">)</span>,</span>

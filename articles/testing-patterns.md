@@ -49,6 +49,7 @@ guardrail function: it returns `TRUE` when the input passes and `FALSE`
 when it blocks.
 
 ``` r
+
 library(securebench)
 
 injection_data <- data.frame(
@@ -105,6 +106,7 @@ Define a guardrail function and evaluate it. A guardrail takes a single
 character input and returns `TRUE` (pass) or `FALSE` (block):
 
 ``` r
+
 simple_guard <- function(text) {
   dangerous <- grepl(
     "DROP TABLE|DELETE FROM|ignore all previous instructions",
@@ -118,6 +120,7 @@ simple_guard <- function(text) {
 Run the evaluation:
 
 ``` r
+
 result <- guardrail_eval(simple_guard, injection_data)
 result
 #> ── Guardrail Evaluation ────────────────────────────────────────────────────────
@@ -132,6 +135,7 @@ The `result` is a `guardrail_eval_result` S7 object. Printing it shows a
 summary. To get the raw metrics as a list:
 
 ``` r
+
 m <- guardrail_metrics(result)
 m
 #> $true_positives
@@ -161,21 +165,22 @@ m
 
 The metrics list contains:
 
-| Metric            | Meaning                                                       |
-|-------------------|---------------------------------------------------------------|
-| `true_positives`  | Correctly blocked (expected=FALSE, pass=FALSE)                |
-| `true_negatives`  | Correctly passed (expected=TRUE, pass=TRUE)                   |
-| `false_positives` | Wrongly blocked (expected=TRUE, pass=FALSE)                   |
-| `false_negatives` | Wrongly passed (expected=FALSE, pass=TRUE)                    |
-| `precision`       | TP / (TP + FP); of everything blocked, how much was correct?  |
-| `recall`          | TP / (TP + FN); of everything dangerous, how much was caught? |
-| `f1`              | Harmonic mean of precision and recall                         |
-| `accuracy`        | (TP + TN) / total                                             |
+| Metric | Meaning |
+|----|----|
+| `true_positives` | Correctly blocked (expected=FALSE, pass=FALSE) |
+| `true_negatives` | Correctly passed (expected=TRUE, pass=TRUE) |
+| `false_positives` | Wrongly blocked (expected=TRUE, pass=FALSE) |
+| `false_negatives` | Wrongly passed (expected=FALSE, pass=TRUE) |
+| `precision` | TP / (TP + FP); of everything blocked, how much was correct? |
+| `recall` | TP / (TP + FN); of everything dangerous, how much was caught? |
+| `f1` | Harmonic mean of precision and recall |
+| `accuracy` | (TP + TN) / total |
 
 Note the convention: **blocking is the positive class**. A true positive
 means the guardrail correctly blocked a dangerous input.
 
 ``` r
+
 cat(sprintf("Precision: %.2f\n", m$precision))
 #> Precision: 1.00
 cat(sprintf("Recall:    %.2f\n", m$recall))
@@ -192,6 +197,7 @@ The confusion matrix gives a compact two-dimensional view of how the
 guardrail performed:
 
 ``` r
+
 cm <- guardrail_confusion(result)
 cm
 #>          actual
@@ -221,6 +227,7 @@ block. Use recall to track how well you catch threats, and precision to
 track how often you incorrectly block legitimate inputs.
 
 ``` r
+
 cat("Threats caught:    ", cm["blocked", "should_block"], "/",
     sum(cm[, "should_block"]), "\n")
 #> Threats caught:     3 / 3
@@ -237,6 +244,7 @@ to see per-case results. The `"data.frame"` format is useful for
 programmatic analysis:
 
 ``` r
+
 report_df <- guardrail_report(result, format = "data.frame")
 report_df
 #>                                                             input expected_pass
@@ -259,6 +267,7 @@ The data frame has columns `input`, `expected_pass`, `actual_pass`,
 `correct`, and `label`. You can filter to find failures:
 
 ``` r
+
 failures <- report_df[!report_df$correct, ]
 if (nrow(failures) > 0) {
   cat("Failed cases:\n")
@@ -273,6 +282,7 @@ The `"console"` format prints a formatted summary directly, useful
 during interactive development:
 
 ``` r
+
 guardrail_report(result, format = "console")
 ```
 
@@ -287,6 +297,7 @@ First, create an improved guardrail that also catches
 [`eval()`](https://rdrr.io/r/base/eval.html) attacks:
 
 ``` r
+
 improved_guard <- function(text) {
   dangerous <- grepl(
     "DROP TABLE|DELETE FROM|ignore all previous instructions|eval\\(",
@@ -301,6 +312,7 @@ Add an [`eval()`](https://rdrr.io/r/base/eval.html) attack to the test
 data and re-evaluate both guardrails on the same dataset:
 
 ``` r
+
 extended_data <- rbind(
   injection_data,
   data.frame(
@@ -318,6 +330,7 @@ result_v2 <- guardrail_eval(improved_guard, extended_data)
 Now compare:
 
 ``` r
+
 comparison <- guardrail_compare(result_v1, result_v2)
 comparison
 #> $delta_precision
@@ -344,21 +357,22 @@ comparison
 
 The comparison list contains:
 
-| Field             | Meaning                                                              |
-|-------------------|----------------------------------------------------------------------|
-| `delta_precision` | Change in precision (positive = improvement)                         |
-| `delta_recall`    | Change in recall                                                     |
-| `delta_f1`        | Change in F1                                                         |
-| `delta_accuracy`  | Change in accuracy                                                   |
-| `improved`        | Number of cases that the new version got right but the old got wrong |
-| `regressed`       | Number of cases that the new version got wrong but the old got right |
-| `unchanged`       | Number of cases with the same outcome                                |
+| Field | Meaning |
+|----|----|
+| `delta_precision` | Change in precision (positive = improvement) |
+| `delta_recall` | Change in recall |
+| `delta_f1` | Change in F1 |
+| `delta_accuracy` | Change in accuracy |
+| `improved` | Number of cases that the new version got right but the old got wrong |
+| `regressed` | Number of cases that the new version got wrong but the old got right |
+| `unchanged` | Number of cases with the same outcome |
 
 The most important field for regression detection is `regressed`. If it
 is greater than zero, the new guardrail broke something that previously
 worked:
 
 ``` r
+
 if (comparison$regressed > 0) {
   cat("REGRESSION DETECTED:", comparison$regressed, "case(s) got worse.\n")
 } else {
@@ -387,6 +401,7 @@ pattern is:
 The simplest approach: assert that key metrics stay above a threshold.
 
 ``` r
+
 test_data <- data.frame(
   input = c(
     "Hello, how are you?",
@@ -421,6 +436,7 @@ Compare against a saved baseline to make sure no individual case
 regressed:
 
 ``` r
+
 # Imagine baseline_result was saved from a previous run
 baseline_result <- guardrail_eval(simple_guard, test_data)
 current_result  <- guardrail_eval(improved_guard, test_data)
@@ -442,6 +458,7 @@ For a quick smoke test during development,
 builds the dataset for you from positive and negative case vectors:
 
 ``` r
+
 metrics <- benchmark_guardrail(
   improved_guard,
   positive_cases = c(
@@ -468,6 +485,7 @@ prompt injection, then check for SQL injection), benchmark the composed
 pipeline:
 
 ``` r
+
 pipeline <- list(
   run = function(text) {
     # Stage 1: prompt injection
@@ -500,6 +518,7 @@ standardised evaluation framework for LLM applications.
 wraps any guardrail into a scorer function that vitals can use.
 
 ``` r
+
 scorer <- as_vitals_scorer(improved_guard)
 ```
 
@@ -508,6 +527,7 @@ The scorer takes two arguments, `input` (character) and `expected`
 incorrect one:
 
 ``` r
+
 # Correct block: expected=FALSE and guardrail blocked it
 scorer("DROP TABLE users", expected = FALSE)
 #> [1] 1
@@ -530,6 +550,7 @@ evaluation pipelines.
 You can manually apply the scorer to a dataset to get per-row scores:
 
 ``` r
+
 scores <- mapply(scorer, injection_data$input, injection_data$expected)
 cat(sprintf("Score: %d/%d correct (%.0f%%)\n",
             sum(scores), length(scores), 100 * mean(scores)))
@@ -538,13 +559,13 @@ cat(sprintf("Score: %d/%d correct (%.0f%%)\n",
 
 ## Summary
 
-| Task                 | Function                                                                                             | Returns                            |
-|----------------------|------------------------------------------------------------------------------------------------------|------------------------------------|
-| Evaluate a guardrail | [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md)           | `guardrail_eval_result` (S7)       |
-| Compute metrics      | [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md)     | List with precision/recall/F1      |
-| Confusion matrix     | [`guardrail_confusion()`](https://ian-flores.github.io/securebench/reference/guardrail_confusion.md) | 2x2 named matrix                   |
-| Per-case report      | [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md)       | Console output or data.frame       |
-| Compare two versions | [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md)     | Deltas + improved/regressed counts |
-| Quick benchmark      | [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md) | Metrics list                       |
-| Pipeline benchmark   | [`benchmark_pipeline()`](https://ian-flores.github.io/securebench/reference/benchmark_pipeline.md)   | `guardrail_eval_result` (S7)       |
-| Vitals scorer        | [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md)       | `function(input, expected)`        |
+| Task | Function | Returns |
+|----|----|----|
+| Evaluate a guardrail | [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md) | `guardrail_eval_result` (S7) |
+| Compute metrics | [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md) | List with precision/recall/F1 |
+| Confusion matrix | [`guardrail_confusion()`](https://ian-flores.github.io/securebench/reference/guardrail_confusion.md) | 2x2 named matrix |
+| Per-case report | [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md) | Console output or data.frame |
+| Compare two versions | [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md) | Deltas + improved/regressed counts |
+| Quick benchmark | [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md) | Metrics list |
+| Pipeline benchmark | [`benchmark_pipeline()`](https://ian-flores.github.io/securebench/reference/benchmark_pipeline.md) | `guardrail_eval_result` (S7) |
+| Vitals scorer | [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md) | `function(input, expected)` |

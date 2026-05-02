@@ -1,7 +1,7 @@
 # securebench
 
-> \[!NOTE\] Experimental release. APIs may change before the 1.0
-> stabilization; track the lifecycle badge above for the current tier.
+> **Note:** Experimental release. APIs may change before the 1.0
+> stabilization — track the lifecycle badge above for the current tier.
 
 Benchmarking framework for guardrail accuracy in R LLM agent workflows.
 Evaluate guardrails against labeled datasets, compute
@@ -18,16 +18,44 @@ different guardrail configurations side by side.
 
 ## Features
 
-| Function                                                                                             | Description                                                  |
-|------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|
-| [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md)           | Evaluate a guardrail against a labeled data frame            |
-| [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md)     | Compute precision, recall, F1, and accuracy                  |
-| [`guardrail_confusion()`](https://ian-flores.github.io/securebench/reference/guardrail_confusion.md) | Generate a 2x2 confusion matrix                              |
-| [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md)     | Compare two guardrails with delta metrics and per-case diffs |
-| [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md)       | Print a formatted report or return results as a data frame   |
-| [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md) | Quick-start: benchmark from positive/negative case vectors   |
-| [`benchmark_pipeline()`](https://ian-flores.github.io/securebench/reference/benchmark_pipeline.md)   | Evaluate a full secureguard pipeline end-to-end              |
-| [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md)       | Convert any guardrail to a vitals-compatible scorer function |
+| Function | Description |
+|----|----|
+| [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md) | Evaluate a guardrail against a labeled data frame |
+| [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md) | Compute precision, recall, F1, and accuracy |
+| [`guardrail_confusion()`](https://ian-flores.github.io/securebench/reference/guardrail_confusion.md) | Generate a 2x2 confusion matrix |
+| [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md) | Compare two guardrails with delta metrics and per-case diffs |
+| [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md) | Print a formatted report or return results as a data frame |
+| [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md) | Quick-start: benchmark from positive/negative case vectors |
+| [`benchmark_pipeline()`](https://ian-flores.github.io/securebench/reference/benchmark_pipeline.md) | Evaluate a full secureguard pipeline end-to-end |
+| [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md) | Convert any guardrail to a vitals-compatible scorer function |
+| [`load_reference()`](https://ian-flores.github.io/securebench/reference/load_reference.md) | Load a bundled labeled dataset (`injection_basic`, `pii_basic`, `secrets_basic`) |
+| [`reference_datasets()`](https://ian-flores.github.io/securebench/reference/reference_datasets.md) | List the names of bundled datasets |
+
+## Bundled Reference Datasets
+
+Three small synthetic labeled datasets ship in `inst/extdata/` so you
+can smoke-test guardrails without writing your own corpus first. Each is
+a `data.frame` with `input` (character), `expected` (logical: `TRUE`
+means the guardrail should let the row through, `FALSE` means it should
+block), and `label` (category tag).
+
+``` r
+
+library(secureguard)
+library(securebench)
+
+df <- load_reference("injection_basic")
+res <- guardrail_eval(guard_prompt_injection(), df)
+guardrail_metrics(res)
+```
+
+Available datasets: `injection_basic` (~50 rows of prompt-injection vs
+benign), `pii_basic` (~50 rows of email/SSN/IBAN/MAC/etc. vs benign),
+`secrets_basic` (~50 rows of leaked-credential shapes vs benign). Tokens
+that look like real cloud-provider keys are masked with `EXAMPLE`
+markers so the bundled CSV doesn’t trip GitHub’s secret scanner. These
+are smoke-test fixtures, not production benchmarks — bring your own
+labeled corpus for serious evaluation.
 
 ## Part of the secure-r-dev Ecosystem
 
@@ -57,19 +85,20 @@ benchmarks guardrail accuracy by evaluating secureguard guardrails (or
 any boolean classifier) against labeled datasets, producing
 precision/recall/F1 metrics and confusion matrices.
 
-| Package                                                      | Role                                                    |
-|--------------------------------------------------------------|---------------------------------------------------------|
-| [securer](https://github.com/ian-flores/securer)             | Sandboxed R execution with tool-call IPC                |
-| [securetools](https://github.com/ian-flores/securetools)     | Pre-built security-hardened tool definitions            |
-| [secureguard](https://github.com/ian-flores/secureguard)     | Input/code/output guardrails (injection, PII, secrets)  |
-| [orchestr](https://github.com/ian-flores/orchestr)           | Graph-based agent orchestration                         |
-| [securecontext](https://github.com/ian-flores/securecontext) | Document chunking, embeddings, RAG retrieval            |
-| [securetrace](https://github.com/ian-flores/securetrace)     | Structured tracing, token/cost accounting, JSONL export |
-| [securebench](https://github.com/ian-flores/securebench)     | Guardrail benchmarking with precision/recall/F1 metrics |
+| Package | Role |
+|----|----|
+| [securer](https://github.com/ian-flores/securer) | Sandboxed R execution with tool-call IPC |
+| [securetools](https://github.com/ian-flores/securetools) | Pre-built security-hardened tool definitions |
+| [secureguard](https://github.com/ian-flores/secureguard) | Input/code/output guardrails (injection, PII, secrets) |
+| [orchestr](https://github.com/ian-flores/orchestr) | Graph-based agent orchestration |
+| [securecontext](https://github.com/ian-flores/securecontext) | Document chunking, embeddings, RAG retrieval |
+| [securetrace](https://github.com/ian-flores/securetrace) | Structured tracing, token/cost accounting, JSONL export |
+| [securebench](https://github.com/ian-flores/securebench) | Guardrail benchmarking with precision/recall/F1 metrics |
 
 ## Installation
 
 ``` r
+
 # install.packages("pak")
 pak::pak("ian-flores/securebench")
 ```
@@ -77,6 +106,7 @@ pak::pak("ian-flores/securebench")
 ## Quick Start
 
 ``` r
+
 library(securebench)
 
 # Benchmark a guardrail with known positive/negative cases
@@ -95,6 +125,7 @@ metrics$f1
 ## Data Frame API
 
 ``` r
+
 data <- data.frame(
   input = c("normal text", "DROP TABLE users"),
   expected = c(TRUE, FALSE),
@@ -110,6 +141,7 @@ guardrail_report(result)
 ## Vitals Interop
 
 ``` r
+
 scorer <- as_vitals_scorer(my_guardrail)
 scorer("safe query", TRUE)    # 1 (correct)
 scorer("DROP TABLE x", FALSE) # 1 (correct)
@@ -118,6 +150,7 @@ scorer("DROP TABLE x", FALSE) # 1 (correct)
 ## Comparing Guardrails
 
 ``` r
+
 # Define test data
 data <- data.frame(
   input = c("hello", "how are you?", "DROP TABLE users", "'; DELETE FROM accounts"),

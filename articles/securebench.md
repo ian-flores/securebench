@@ -96,6 +96,7 @@ which takes a guardrail function and two vectors: inputs that should be
 blocked and inputs that should pass.
 
 ``` r
+
 library(securebench)
 
 my_guardrail <- function(text) {
@@ -126,6 +127,7 @@ convention `TRUE` = safe (should pass), `FALSE` = dangerous (should
 block):
 
 ``` r
+
 data <- data.frame(
   input = c("normal text", "safe query", "DROP TABLE x", "rm -rf /"),
   expected = c(TRUE, TRUE, FALSE, FALSE),
@@ -167,6 +169,7 @@ Generate formatted reports for interactive exploration or programmatic
 analysis:
 
 ``` r
+
 guardrail_report(result, format = "console")
 
 df <- guardrail_report(result, format = "data.frame")
@@ -185,6 +188,7 @@ helped and that nothing regressed.
 takes a baseline and a new result and shows exactly what changed:
 
 ``` r
+
 improved_guard <- function(text) {
   !grepl("DROP TABLE|rm -rf|DELETE FROM", text)
 }
@@ -206,6 +210,7 @@ Export any guardrail as a vitals-compatible scorer for use in broader
 LLM evaluation pipelines:
 
 ``` r
+
 scorer <- as_vitals_scorer(my_guardrail)
 scorer("safe query", TRUE)    # 1 (correct)
 scorer("DROP TABLE x", FALSE) # 1 (correct)
@@ -216,6 +221,7 @@ scorer("DROP TABLE x", FALSE) # 1 (correct)
 Evaluate a full multi-stage guardrail pipeline against a dataset:
 
 ``` r
+
 pipeline <- list(run = function(text) {
   !grepl("DROP TABLE|rm -rf|eval\\(", text)
 })
