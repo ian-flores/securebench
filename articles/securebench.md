@@ -1,5 +1,22 @@
 # Getting Started with securebench
 
+## What securebench is
+
+securebench provides security-specific benchmark datasets and evaluation
+harnesses for R LLM agents: prompt-injection resistance, dangerous-code
+detection, PII/secret leakage, and A/B comparison of guardrail
+configurations (such as
+[secureguard](https://github.com/ian-flores/secureguard) pipelines).
+
+It is deliberately narrow. For general-purpose LLM evaluation in R –
+tasks, solvers, model-graded scoring – use the tidyverse’s
+[vitals](https://vitals.tidyverse.org/) package. securebench complements
+vitals rather than competing with it: it covers the security niche
+vitals does not, and any guardrail exports as a vitals-compatible scorer
+via
+[`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md)
+so security checks can run inside a vitals eval suite.
+
 ## Why benchmark guardrails?
 
 Every guardrail in an AI agent system makes a binary decision: let the
@@ -206,8 +223,10 @@ small regression in recall can mean a real attack vector re-opened.
 
 ## Vitals interop
 
-Export any guardrail as a vitals-compatible scorer for use in broader
-LLM evaluation pipelines:
+[vitals](https://vitals.tidyverse.org/) is the general LLM evaluation
+framework for R. Export any guardrail as a vitals-compatible scorer to
+run securebench’s security checks inside broader vitals evaluation
+pipelines:
 
 ``` r
 

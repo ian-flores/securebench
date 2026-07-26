@@ -2,10 +2,13 @@
 
 ## What This Is
 
-An R package for benchmarking guardrail accuracy in R LLM agent
-workflows. Focuses on evaluating guardrails (input validation, code
-analysis, output filtering) with precision/recall/F1 metrics.
-Interoperates with the vitals package for broader eval workflows.
+An R package providing security-specific benchmark datasets and
+harnesses for R LLM agents: prompt-injection resistance, dangerous-code
+detection, PII/secret leakage, and A/B comparison of guardrail
+configurations, measured with precision/recall/F1 metrics. NOT a general
+eval framework – that is the tidyverse’s vitals package, which
+securebench complements via
+[`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md).
 
 ## Architecture
 

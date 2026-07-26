@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Guardrail Benchmarking for Large Language Model Agents • securebench</title>
+<title>Security Benchmark Datasets and Harnesses for Large Language Model Agents • securebench</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Guardrail Benchmarking for Large Language Model Agents">
-<meta name="description" content="Benchmarking framework for guardrail accuracy in R Large Language Model (LLM) agent workflows. Evaluate guardrails against labeled datasets, compute precision, recall, and F1 metrics, generate confusion matrices, compare results across iterations, and export as vitals-compatible scorers.">
-<meta property="og:description" content="Benchmarking framework for guardrail accuracy in R Large Language Model (LLM) agent workflows. Evaluate guardrails against labeled datasets, compute precision, recall, and F1 metrics, generate confusion matrices, compare results across iterations, and export as vitals-compatible scorers.">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Security Benchmark Datasets and Harnesses for Large Language Model Agents">
+<meta name="description" content="Security-specific benchmark datasets and evaluation harnesses for Large Language Model (LLM) agents in R. Measure prompt-injection resistance, dangerous-code detection, and leakage of personally identifiable information or secrets against labeled datasets; compute precision, recall, and F1 metrics; generate confusion matrices; and run A/B comparisons of guardrail configurations (for example, secureguard pipelines). Designed to complement the general-purpose vitals evaluation framework: guardrails export as vitals-compatible scorers.">
+<meta property="og:description" content="Security-specific benchmark datasets and evaluation harnesses for Large Language Model (LLM) agents in R. Measure prompt-injection resistance, dangerous-code detection, and leakage of personally identifiable information or secrets against labeled datasets; compute precision, recall, and F1 metrics; generate confusion matrices; and run A/B comparisons of guardrail configurations (for example, secureguard pipelines). Designed to complement the general-purpose vitals evaluation framework: guardrails export as vitals-compatible scorers.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -61,11 +61,12 @@
 <blockquote>
 <p><strong>Note:</strong> Experimental release. APIs may change before the 1.0 stabilization — track the lifecycle badge above for the current tier.</p>
 </blockquote>
-<p>Benchmarking framework for guardrail accuracy in R LLM agent workflows. Evaluate guardrails against labeled datasets, compute precision/recall/F1 metrics, generate confusion matrices, compare results across iterations, and export as vitals-compatible scorers.</p>
+<p>Security-specific benchmark datasets and harnesses for R LLM agents. Measure prompt-injection resistance, dangerous-code detection, and PII/secret leakage against labeled datasets; compute precision/recall/F1 metrics and confusion matrices; A/B-compare guardrail configurations (including <a href="https://github.com/ian-flores/secureguard" class="external-link">secureguard</a> pipelines); and export any guardrail as a <a href="https://vitals.tidyverse.org/" class="external-link">vitals</a>-compatible scorer.</p>
 <div class="section level2">
 <h2 id="why-securebench">Why securebench?<a class="anchor" aria-label="anchor" href="#why-securebench"></a>
 </h2>
-<p>When you build guardrails, you need to know if they actually work. securebench gives you precision, recall, and F1 metrics for any guardrail – so you can measure how well your prompt injection detector catches attacks without blocking legitimate queries, and compare different guardrail configurations side by side.</p>
+<p>R already has a general-purpose LLM evaluation framework: the tidyverse’s <a href="https://vitals.tidyverse.org/" class="external-link">vitals</a>. securebench is not that, and doesn’t try to be. What R does <em>not</em> have is security-specific benchmarks: labeled datasets of prompt-injection attempts, dangerous code, and credential/PII leaks, plus harnesses that answer the questions security work actually asks. Does my injection detector catch attacks without blocking legitimate queries? Did tightening a guardrail re-open an attack vector it used to catch? Which of two guardrail configurations misses fewer threats?</p>
+<p>securebench fills that niche. It ships labeled security datasets, evaluates any boolean guardrail (a secureguard pipeline or a plain function) against them, and reports the metrics that matter for security decisions – recall on attacks, precision on benign traffic, and per-case regressions between versions. When you want those security checks inside a broader eval suite, <code><a href="reference/as_vitals_scorer.html">as_vitals_scorer()</a></code> turns any guardrail into a scorer vitals can run, so the two packages compose rather than compete.</p>
 </div>
 <div class="section level2">
 <h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
@@ -137,27 +138,9 @@
 <p>Available datasets: <code>injection_basic</code> (~50 rows of prompt-injection vs benign), <code>pii_basic</code> (~50 rows of email/SSN/IBAN/MAC/etc. vs benign), <code>secrets_basic</code> (~50 rows of leaked-credential shapes vs benign). Tokens that look like real cloud-provider keys are masked with <code>EXAMPLE</code> markers so the bundled CSV doesn’t trip GitHub’s secret scanner. These are smoke-test fixtures, not production benchmarks — bring your own labeled corpus for serious evaluation.</p>
 </div>
 <div class="section level2">
-<h2 id="part-of-the-secure-r-dev-ecosystem">Part of the secure-r-dev Ecosystem<a class="anchor" aria-label="anchor" href="#part-of-the-secure-r-dev-ecosystem"></a>
+<h2 id="companion-packages">Companion Packages<a class="anchor" aria-label="anchor" href="#companion-packages"></a>
 </h2>
-<p>securebench is part of a 7-package ecosystem for building governed AI agents in R:</p>
-<pre><code>                    ┌─────────────┐
-                    │   securer    │
-                    └──────┬──────┘
-          ┌────────────────┼─────────────────┐
-          │                │                  │
-   ┌──────▼──────┐  ┌─────▼──────┐  ┌───────▼────────┐
-   │ securetools  │  │ secureguard│  │ securecontext   │
-   └──────┬───────┘  └─────┬──────┘  └───────┬────────┘
-          └────────────────┼─────────────────┘
-                    ┌──────▼───────┐
-                    │   orchestr   │
-                    └──────┬───────┘
-          ┌────────────────┼─────────────────┐
-          │                                  │
-   ┌──────▼──────┐                   ┌───────▼────────┐
-   │ securetrace  │                  │&gt;&gt;&gt; securebench&lt;&lt;&lt;│
-   └─────────────┘                   └────────────────┘</code></pre>
-<p>securebench sits at the bottom of the stack alongside securetrace. It benchmarks guardrail accuracy by evaluating secureguard guardrails (or any boolean classifier) against labeled datasets, producing precision/recall/F1 metrics and confusion matrices.</p>
+<p>securebench is the measurement layer of a small family of packages for building secure LLM agents in R. Each package stands alone; together they cover sandboxing, hardened tools, runtime guardrails, and benchmarking:</p>
 <table class="table">
 <colgroup>
 <col width="60%">
@@ -181,35 +164,24 @@
 <td>Input/code/output guardrails (injection, PII, secrets)</td>
 </tr>
 <tr>
-<td><a href="https://github.com/ian-flores/orchestr" class="external-link">orchestr</a></td>
-<td>Graph-based agent orchestration</td>
-</tr>
-<tr>
-<td><a href="https://github.com/ian-flores/securecontext" class="external-link">securecontext</a></td>
-<td>Document chunking, embeddings, RAG retrieval</td>
-</tr>
-<tr>
-<td><a href="https://github.com/ian-flores/securetrace" class="external-link">securetrace</a></td>
-<td>Structured tracing, token/cost accounting, JSONL export</td>
-</tr>
-<tr>
 <td><a href="https://github.com/ian-flores/securebench" class="external-link">securebench</a></td>
-<td>Guardrail benchmarking with precision/recall/F1 metrics</td>
+<td>Security benchmark datasets and guardrail benchmarking harnesses</td>
 </tr>
 </tbody>
 </table>
+<p>secureguard enforces guardrails at runtime; securebench measures whether those guardrails (or any boolean classifier) actually work, using labeled datasets, precision/recall/F1 metrics, and A/B comparison. For general LLM evaluation beyond security, use <a href="https://vitals.tidyverse.org/" class="external-link">vitals</a> – securebench guardrails plug into it via <code><a href="reference/as_vitals_scorer.html">as_vitals_scorer()</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"ian-flores/securebench"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/securebench/">securebench</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Benchmark a guardrail with known positive/negative cases</span></span>
@@ -227,7 +199,7 @@
 <div class="section level2">
 <h2 id="data-frame-api">Data Frame API<a class="anchor" aria-label="anchor" href="#data-frame-api"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normal text"</span>, <span class="st">"DROP TABLE users"</span><span class="op">)</span>,</span>
 <span>  expected <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">FALSE</span><span class="op">)</span>,</span>
@@ -242,7 +214,8 @@
 <div class="section level2">
 <h2 id="vitals-interop">Vitals Interop<a class="anchor" aria-label="anchor" href="#vitals-interop"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p><a href="https://vitals.tidyverse.org/" class="external-link">vitals</a> is the general LLM evaluation framework for R; securebench supplies the security-specific piece. Any guardrail exports as a vitals-compatible scorer, so security checks slot into your existing vitals eval suites:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">scorer</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/as_vitals_scorer.html">as_vitals_scorer</a></span><span class="op">(</span><span class="va">my_guardrail</span><span class="op">)</span></span>
 <span><span class="fu">scorer</span><span class="op">(</span><span class="st">"safe query"</span>, <span class="cn">TRUE</span><span class="op">)</span>    <span class="co"># 1 (correct)</span></span>
 <span><span class="fu">scorer</span><span class="op">(</span><span class="st">"DROP TABLE x"</span>, <span class="cn">FALSE</span><span class="op">)</span> <span class="co"># 1 (correct)</span></span></code></pre></div>
@@ -250,7 +223,7 @@
 <div class="section level2">
 <h2 id="comparing-guardrails">Comparing Guardrails<a class="anchor" aria-label="anchor" href="#comparing-guardrails"></a>
 </h2>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define test data</span></span>
 <span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hello"</span>, <span class="st">"how are you?"</span>, <span class="st">"DROP TABLE users"</span>, <span class="st">"'; DELETE FROM accounts"</span><span class="op">)</span>,</span>
@@ -345,7 +318,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>
