@@ -37,7 +37,7 @@ benchmark_guardrail <- function(guardrail, positive_cases, negative_cases) {
   }
 
   if (.trace_active()) {
-    securetrace::with_span("bench.benchmark_guardrail", type = "custom", {
+    .with_span("securebench::benchmark_guardrail", {
       result <- .do_benchmark()
       .span_event("benchmark_guardrail.complete", list(
         positive_count = length(positive_cases),
@@ -81,7 +81,7 @@ benchmark_pipeline <- function(pipeline, data) {
   }
 
   if (.trace_active()) {
-    securetrace::with_span("bench.benchmark_pipeline", type = "custom", {
+    .with_span("securebench::benchmark_pipeline", {
       .do_pipeline()
     })
   } else {

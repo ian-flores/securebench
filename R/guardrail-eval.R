@@ -104,7 +104,7 @@ guardrail_eval <- function(guardrail, data) {
   }
 
   if (.trace_active()) {
-    securetrace::with_span("bench.guardrail_eval", type = "custom", {
+    .with_span("securebench::guardrail_eval", {
       result <- .do_eval()
       results_list <- result@results
       passes <- vapply(results_list, function(r) r$pass, logical(1))
@@ -192,7 +192,7 @@ guardrail_metrics <- function(eval_result) {
   }
 
   if (.trace_active()) {
-    securetrace::with_span("bench.guardrail_metrics", type = "custom", {
+    .with_span("securebench::guardrail_metrics", {
       result <- .do_metrics()
       .span_event("metrics.complete", list(
         precision = result$precision,
@@ -292,7 +292,7 @@ guardrail_compare <- function(baseline, comparison) {
   }
 
   if (.trace_active()) {
-    securetrace::with_span("bench.guardrail_compare", type = "custom", {
+    .with_span("securebench::guardrail_compare", {
       result <- .do_compare()
       .span_event("compare.complete", list(
         improved = result$improved,
