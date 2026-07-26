@@ -9,11 +9,13 @@
 
 > **Note:** Experimental release. APIs may change before the 1.0 stabilization — track the lifecycle badge above for the current tier.
 
-Benchmarking framework for guardrail accuracy in R LLM agent workflows. Evaluate guardrails against labeled datasets, compute precision/recall/F1 metrics, generate confusion matrices, compare results across iterations, and export as vitals-compatible scorers.
+Security-specific benchmark datasets and harnesses for R LLM agents. Measure prompt-injection resistance, dangerous-code detection, and PII/secret leakage against labeled datasets; compute precision/recall/F1 metrics and confusion matrices; A/B-compare guardrail configurations (including [secureguard](https://github.com/ian-flores/secureguard) pipelines); and export any guardrail as a [vitals](https://vitals.tidyverse.org/)-compatible scorer.
 
 ## Why securebench?
 
-When you build guardrails, you need to know if they actually work. securebench gives you precision, recall, and F1 metrics for any guardrail -- so you can measure how well your prompt injection detector catches attacks without blocking legitimate queries, and compare different guardrail configurations side by side.
+R already has a general-purpose LLM evaluation framework: the tidyverse's [vitals](https://vitals.tidyverse.org/). securebench is not that, and doesn't try to be. What R does *not* have is security-specific benchmarks: labeled datasets of prompt-injection attempts, dangerous code, and credential/PII leaks, plus harnesses that answer the questions security work actually asks. Does my injection detector catch attacks without blocking legitimate queries? Did tightening a guardrail re-open an attack vector it used to catch? Which of two guardrail configurations misses fewer threats?
+
+securebench fills that niche. It ships labeled security datasets, evaluates any boolean guardrail (a secureguard pipeline or a plain function) against them, and reports the metrics that matter for security decisions -- recall on attacks, precision on benign traffic, and per-case regressions between versions. When you want those security checks inside a broader eval suite, `as_vitals_scorer()` turns any guardrail into a scorer vitals can run, so the two packages compose rather than compete.
 
 ## Features
 
@@ -45,41 +47,18 @@ guardrail_metrics(res)
 
 Available datasets: `injection_basic` (~50 rows of prompt-injection vs benign), `pii_basic` (~50 rows of email/SSN/IBAN/MAC/etc. vs benign), `secrets_basic` (~50 rows of leaked-credential shapes vs benign). Tokens that look like real cloud-provider keys are masked with `EXAMPLE` markers so the bundled CSV doesn't trip GitHub's secret scanner. These are smoke-test fixtures, not production benchmarks — bring your own labeled corpus for serious evaluation.
 
-## Part of the secure-r-dev Ecosystem
+## Companion Packages
 
-securebench is part of a 7-package ecosystem for building governed AI agents in R:
-
-```
-                    ┌─────────────┐
-                    │   securer    │
-                    └──────┬──────┘
-          ┌────────────────┼─────────────────┐
-          │                │                  │
-   ┌──────▼──────┐  ┌─────▼──────┐  ┌───────▼────────┐
-   │ securetools  │  │ secureguard│  │ securecontext   │
-   └──────┬───────┘  └─────┬──────┘  └───────┬────────┘
-          └────────────────┼─────────────────┘
-                    ┌──────▼───────┐
-                    │   orchestr   │
-                    └──────┬───────┘
-          ┌────────────────┼─────────────────┐
-          │                                  │
-   ┌──────▼──────┐                   ┌───────▼────────┐
-   │ securetrace  │                  │>>> securebench<<<│
-   └─────────────┘                   └────────────────┘
-```
-
-securebench sits at the bottom of the stack alongside securetrace. It benchmarks guardrail accuracy by evaluating secureguard guardrails (or any boolean classifier) against labeled datasets, producing precision/recall/F1 metrics and confusion matrices.
+securebench is the measurement layer of a small family of packages for building secure LLM agents in R. Each package stands alone; together they cover sandboxing, hardened tools, runtime guardrails, and benchmarking:
 
 | Package | Role |
 |---------|------|
 | [securer](https://github.com/ian-flores/securer) | Sandboxed R execution with tool-call IPC |
 | [securetools](https://github.com/ian-flores/securetools) | Pre-built security-hardened tool definitions |
 | [secureguard](https://github.com/ian-flores/secureguard) | Input/code/output guardrails (injection, PII, secrets) |
-| [orchestr](https://github.com/ian-flores/orchestr) | Graph-based agent orchestration |
-| [securecontext](https://github.com/ian-flores/securecontext) | Document chunking, embeddings, RAG retrieval |
-| [securetrace](https://github.com/ian-flores/securetrace) | Structured tracing, token/cost accounting, JSONL export |
-| [securebench](https://github.com/ian-flores/securebench) | Guardrail benchmarking with precision/recall/F1 metrics |
+| [securebench](https://github.com/ian-flores/securebench) | Security benchmark datasets and guardrail benchmarking harnesses |
+
+secureguard enforces guardrails at runtime; securebench measures whether those guardrails (or any boolean classifier) actually work, using labeled datasets, precision/recall/F1 metrics, and A/B comparison. For general LLM evaluation beyond security, use [vitals](https://vitals.tidyverse.org/) -- securebench guardrails plug into it via `as_vitals_scorer()`.
 
 ## Installation
 
@@ -122,6 +101,8 @@ guardrail_report(result)
 ```
 
 ## Vitals Interop
+
+[vitals](https://vitals.tidyverse.org/) is the general LLM evaluation framework for R; securebench supplies the security-specific piece. Any guardrail exports as a vitals-compatible scorer, so security checks slot into your existing vitals eval suites:
 
 ```r
 scorer <- as_vitals_scorer(my_guardrail)

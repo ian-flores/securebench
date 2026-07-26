@@ -16,6 +16,12 @@ knitr::opts_chunk$set(
 
 ## Overview
 
+securebench provides security-specific benchmarks for R LLM agents:
+labeled datasets and harnesses for measuring prompt-injection resistance,
+dangerous-code detection, and guardrail accuracy. (For general-purpose LLM
+evaluation, use [vitals](https://vitals.tidyverse.org/); the two compose via
+`as_vitals_scorer()`.)
+
 The `vignette("securebench")` quickstart introduced precision, recall, F1, and
 the confusion matrix, the vocabulary for reasoning about guardrail accuracy.
 This vignette walks through the practical patterns for going from "I have a
@@ -401,9 +407,10 @@ cat(sprintf("Pipeline F1: %.2f\n", pipeline_metrics$f1))
 
 ## Vitals interop via as_vitals_scorer()
 
-The [vitals](https://github.com/tidyverse/vitals) package provides a
-standardised evaluation framework for LLM applications. `as_vitals_scorer()`
-wraps any guardrail into a scorer function that vitals can use.
+The tidyverse's [vitals](https://vitals.tidyverse.org/) package is the
+general-purpose evaluation framework for LLM applications in R.
+`as_vitals_scorer()` wraps any guardrail into a scorer function that vitals
+can use, so securebench's security checks slot into a vitals eval suite.
 
 ```{r}
 scorer <- as_vitals_scorer(improved_guard)
