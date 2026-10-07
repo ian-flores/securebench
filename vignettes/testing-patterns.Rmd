@@ -1,8 +1,8 @@
 ---
-title: "Guardrail Testing Patterns"
+title: "Guardrail testing patterns"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Guardrail Testing Patterns}
+  %\VignetteIndexEntry{Guardrail testing patterns}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,45 +16,34 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-securebench provides security-specific benchmarks for R LLM agents:
-labeled datasets and harnesses for measuring prompt-injection resistance,
-dangerous-code detection, and guardrail accuracy. (For general-purpose LLM
-evaluation, use [vitals](https://vitals.tidyverse.org/); the two compose via
-`as_vitals_scorer()`.)
+`vignette("securebench")` explained precision, recall, F1 and the confusion
+matrix. This vignette is about using them day to day: building a test set,
+checking a guardrail against it, and setting up tests that fail when a
+change makes the guardrail worse.
 
-The `vignette("securebench")` quickstart introduced precision, recall, F1, and
-the confusion matrix, the vocabulary for reasoning about guardrail accuracy.
-This vignette walks through the practical patterns for going from "I have a
-guardrail" to "I can prove my guardrail works and catch regressions
-automatically."
+Everything runs on your machine. Nothing calls an API.
 
-Every operation runs locally; no API calls, no external services.
+### The workflow
 
-### The benchmark workflow
+It's a loop. Run the guardrail on your test set, compare against the last
+good version if you have one, look at the report, fix what's wrong, and run
+it again.
 
-The overall workflow follows a repeatable loop: benchmark a guardrail, compare
-against a baseline, and generate reports that tell you what to fix next.
-
-```{mermaid}
-%%| fig-cap: "The guardrail benchmarking workflow"
-graph LR
-    A["Define test<br/>dataset"] --> B["Evaluate<br/>guardrail"]
-    B --> C{"Baseline<br/>exists?"}
-    C -- Yes --> D["Compare<br/>versions"]
-    C -- No --> E["Save as<br/>baseline"]
-    D --> F["Generate<br/>report"]
-    E --> F
-    F --> G{"Metrics<br/>acceptable?"}
-    G -- No --> H["Improve<br/>guardrail"]
-    H --> B
-    G -- Yes --> I["Ship it"]
+```{=html}
+<figure class="hairline">
+<svg role="img" aria-label="Flow: define a test set, run the guardrail, compare with or save a baseline, read the report, then ship it or fix the guardrail and run it again" viewBox="0 0 940 272" xmlns="http://www.w3.org/2000/svg"><defs>
+<marker id="wf-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M1 1L9 5L1 9" fill="none" stroke="#2b1f12" stroke-width="1"/></marker>
+<pattern id="wf-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<line x1="0" y1="0" x2="0" y2="6" stroke="#bf5a36" stroke-width="0.6" opacity="0.55"/></pattern>
+</defs><rect x="16" y="84" width="108" height="52" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="70.0" y="106.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >DEFINE A</text><text x="70.0" y="120.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >TEST SET</text><path d="M124 110H170" fill="none" stroke="#2b1f12" stroke-width="0.75" marker-end="url(#wf-arrow)"/><rect x="172" y="84" width="108" height="52" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="226.0" y="106.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >RUN THE</text><text x="226.0" y="120.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >GUARDRAIL</text><path d="M280 110H312" fill="none" stroke="#2b1f12" stroke-width="0.75" marker-end="url(#wf-arrow)"/><polygon points="366,75.0 420.0,110 366,145.0 312.0,110" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="366" y="106.5" font-family="Space Mono, ui-monospace, monospace" font-size="10" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >BASELINE</text><text x="366" y="120.5" font-family="Space Mono, ui-monospace, monospace" font-size="10" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >SAVED?</text><path d="M366 75V48H426" fill="none" stroke="#2b1f12" stroke-width="0.75" marker-end="url(#wf-arrow)"/><text x="374" y="62" font-family="Space Mono, ui-monospace, monospace" font-size="9.5" fill="#6b5638" text-anchor="start" font-weight="400" letter-spacing="0.4" >yes</text><rect x="428" y="24" width="116" height="48" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="486.0" y="44.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >COMPARE WITH</text><text x="486.0" y="58.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >THE BASELINE</text><path d="M366 145V172H426" fill="none" stroke="#2b1f12" stroke-width="0.75" marker-end="url(#wf-arrow)"/><text x="374" y="162" font-family="Space Mono, ui-monospace, monospace" font-size="9.5" fill="#6b5638" text-anchor="start" font-weight="400" letter-spacing="0.4" >no</text><rect x="428" y="148" width="116" height="48" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="486.0" y="168.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >SAVE IT AS</text><text x="486.0" y="182.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >THE BASELINE</text><path d="M544 48H556V110M544 172H556V110" fill="none" stroke="#2b1f12" stroke-width="0.75"/><circle cx="556" cy="110" r="1.6" fill="#2b1f12"/><path d="M556 110H572" fill="none" stroke="#2b1f12" stroke-width="0.75" marker-end="url(#wf-arrow)"/><rect x="574" y="86" width="98" height="48" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="623.0" y="106.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >READ THE</text><text x="623.0" y="120.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >REPORT</text><path d="M672 110H700" fill="none" stroke="#2b1f12" stroke-width="0.75" marker-end="url(#wf-arrow)"/><polygon points="756,75.0 812.0,110 756,145.0 700.0,110" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="756" y="106.5" font-family="Space Mono, ui-monospace, monospace" font-size="10" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >GOOD</text><text x="756" y="120.5" font-family="Space Mono, ui-monospace, monospace" font-size="10" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >ENOUGH?</text><path d="M812 110H840" fill="none" stroke="#2b1f12" stroke-width="0.75" marker-end="url(#wf-arrow)"/><text x="818" y="102" font-family="Space Mono, ui-monospace, monospace" font-size="9.5" fill="#6b5638" text-anchor="start" font-weight="400" letter-spacing="0.4" >yes</text><rect x="842" y="88" width="82" height="44" fill="none" stroke="#bf5a36" stroke-width="0.75"/><text x="883.0" y="113.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#bf5a36" text-anchor="middle" font-weight="400" letter-spacing="1.2" >SHIP IT</text><path d="M756 145V236H690" fill="none" stroke="#2b1f12" stroke-width="0.75" marker-end="url(#wf-arrow)"/><text x="764" y="170" font-family="Space Mono, ui-monospace, monospace" font-size="9.5" fill="#6b5638" text-anchor="start" font-weight="400" letter-spacing="0.4" >no</text><rect x="588" y="216" width="100" height="40" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="638.0" y="232.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >FIX THE</text><text x="638.0" y="246.675" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >GUARDRAIL</text><path d="M588 236H226V138" fill="none" stroke="#2b1f12" stroke-width="0.75" marker-end="url(#wf-arrow)" stroke-dasharray="3 3"/></svg>
+<figcaption>Fig. 1 &middot; The benchmarking loop</figcaption>
+</figure>
 ```
 
-Each section below maps to one or more steps in this workflow.
+## Building a test set
 
-## Designing test datasets
-
-A securebench test dataset is a plain `data.frame` with three columns:
+A test set is a plain data frame with three columns:
 
 | Column     | Type      | Description                                          |
 |------------|-----------|------------------------------------------------------|
@@ -62,9 +51,9 @@ A securebench test dataset is a plain `data.frame` with three columns:
 | `expected` | logical   | `TRUE` if the guardrail should **pass** the input    |
 | `label`    | character | (optional) A human-readable category for the case    |
 
-The convention is that `TRUE` means "safe / allowed" and `FALSE` means
-"dangerous / should be blocked". This matches the return value of a guardrail
-function: it returns `TRUE` when the input passes and `FALSE` when it blocks.
+`TRUE` means the input is safe and should get through. `FALSE` means it's
+dangerous and should be blocked. That matches what a guardrail returns:
+`TRUE` to let an input through, `FALSE` to block it.
 
 ```{r}
 library(securebench)
@@ -90,22 +79,25 @@ injection_data <- data.frame(
 injection_data
 ```
 
-### Tips for good test data
+### Tips
 
-- Balance the classes. Include roughly equal numbers of positive (should
-  block) and negative (should pass) cases so that accuracy is not misleading.
-- Label every case. The `label` column makes reports easier to read and
-  helps you spot which categories of attack a guardrail misses.
-- Cover edge cases. Include borderline inputs that are close to the decision
-  boundary, not just obvious examples.
-- Keep it deterministic. Guardrails tested with securebench should be pure
-  functions (same input always gives same output) so that results are
-  reproducible.
+Aim for about as many inputs that should be blocked as inputs that should
+get through. If 95% of your cases are safe, a guardrail that blocks nothing
+still scores 95% accuracy.
 
-## Running guardrail_eval() and interpreting metrics
+Label every case. The labels show up in reports and make it easy to see
+which kind of attack a guardrail keeps missing.
 
-Define a guardrail function and evaluate it. A guardrail takes a single
-character input and returns `TRUE` (pass) or `FALSE` (block):
+Include borderline inputs, not just obvious ones. "How do I drop a column?"
+tells you more than "DROP TABLE users".
+
+Use guardrails that give the same answer for the same input every time.
+Otherwise you can't compare one run with the next.
+
+## Running a guardrail and reading the metrics
+
+A guardrail takes one string and returns `TRUE` to let it through or `FALSE`
+to block it:
 
 ```{r}
 simple_guard <- function(text) {
@@ -118,22 +110,22 @@ simple_guard <- function(text) {
 }
 ```
 
-Run the evaluation:
+Run it on the test set:
 
 ```{r}
 result <- guardrail_eval(simple_guard, injection_data)
 result
 ```
 
-The `result` is a `guardrail_eval_result` S7 object. Printing it shows a
-summary. To get the raw metrics as a list:
+`result` is a `guardrail_eval_result` object, and printing it shows a
+summary. To get the numbers as a list:
 
 ```{r}
 m <- guardrail_metrics(result)
 m
 ```
 
-The metrics list contains:
+The list has:
 
 | Metric            | Meaning                                                        |
 |-------------------|----------------------------------------------------------------|
@@ -146,8 +138,8 @@ The metrics list contains:
 | `f1`              | Harmonic mean of precision and recall                          |
 | `accuracy`        | (TP + TN) / total                                              |
 
-Note the convention: **blocking is the positive class**. A true positive means
-the guardrail correctly blocked a dangerous input.
+Blocking counts as the positive result, so a true positive is a dangerous
+input that the guardrail blocked.
 
 ```{r}
 cat(sprintf("Precision: %.2f\n", m$precision))
@@ -156,34 +148,28 @@ cat(sprintf("F1:        %.2f\n", m$f1))
 cat(sprintf("Accuracy:  %.2f\n", m$accuracy))
 ```
 
-## Confusion matrix analysis
+## The confusion matrix
 
-The confusion matrix gives a compact two-dimensional view of how the guardrail
-performed:
+The confusion matrix puts the same counts in a 2x2 table:
 
 ```{r}
 cm <- guardrail_confusion(result)
 cm
 ```
 
-The matrix has:
-
-- **Rows** = what the guardrail predicted (`blocked` / `passed`)
-- **Columns** = what the ground truth says (`should_block` / `should_pass`)
-
-Reading the four cells:
+Rows are what the guardrail did (`blocked` or `passed`). Columns are what it
+should have done (`should_block` or `should_pass`). So the four cells are:
 
 | Cell                            | Interpretation                         |
 |---------------------------------|----------------------------------------|
-| `cm["blocked", "should_block"]` | True positives: correctly blocked       |
-| `cm["passed", "should_block"]`  | False negatives: missed threats         |
-| `cm["blocked", "should_pass"]`  | False positives: over-blocked           |
-| `cm["passed", "should_pass"]`   | True negatives: correctly allowed       |
+| `cm["blocked", "should_block"]` | True positives: blocked, correctly      |
+| `cm["passed", "should_block"]`  | False negatives: attacks that got through |
+| `cm["blocked", "should_pass"]`  | False positives: safe inputs blocked    |
+| `cm["passed", "should_pass"]`   | True negatives: let through, correctly  |
 
-In security contexts, false negatives are usually worse than false positives
-because a missed attack is more dangerous than an over-eager block. Use recall to
-track how well you catch threats, and precision to track how often you
-incorrectly block legitimate inputs.
+In security, a missed attack is usually worse than a false alarm. Recall
+tells you how many attacks you catch. Precision tells you how often you
+block something you shouldn't.
 
 ```{r}
 cat("Threats caught:    ", cm["blocked", "should_block"], "/",
@@ -192,18 +178,18 @@ cat("False alarms:      ", cm["blocked", "should_pass"], "/",
     sum(cm[, "should_pass"]), "\n")
 ```
 
-## Detailed reports
+## Per-case reports
 
-Use `guardrail_report()` to see per-case results. The `"data.frame"` format is
-useful for programmatic analysis:
+`guardrail_report()` shows the result for each case. With
+`format = "data.frame"` you get something you can filter:
 
 ```{r}
 report_df <- guardrail_report(result, format = "data.frame")
 report_df
 ```
 
-The data frame has columns `input`, `expected_pass`, `actual_pass`, `correct`,
-and `label`. You can filter to find failures:
+The columns are `input`, `expected_pass`, `actual_pass`, `correct` and
+`label`. To see only the cases it got wrong:
 
 ```{r}
 failures <- report_df[!report_df$correct, ]
@@ -215,20 +201,20 @@ if (nrow(failures) > 0) {
 }
 ```
 
-The `"console"` format prints a formatted summary directly, useful during
-interactive development:
+`format = "console"` prints a summary instead, which is easier to read while
+you're working:
 
 ```{r, eval = FALSE}
 guardrail_report(result, format = "console")
 ```
 
-## Comparing guardrails with guardrail_compare()
+## Comparing two versions
 
-When you change a guardrail, you need to check that the change actually helped
-and that nothing regressed. `guardrail_compare()` takes a baseline and a comparison
-result and shows what changed.
+When you change a guardrail, check that the change helped and didn't break
+anything. `guardrail_compare()` takes an old result and a new one and tells
+you what changed.
 
-First, create an improved guardrail that also catches `eval()` attacks:
+Here's a new version that also blocks `eval()`:
 
 ```{r}
 improved_guard <- function(text) {
@@ -241,8 +227,7 @@ improved_guard <- function(text) {
 }
 ```
 
-Add an `eval()` attack to the test data and re-evaluate both guardrails on the
-same dataset:
+Add an `eval()` attack to the test set and run both versions on it:
 
 ```{r}
 extended_data <- rbind(
@@ -259,27 +244,27 @@ result_v1 <- guardrail_eval(simple_guard, extended_data)
 result_v2 <- guardrail_eval(improved_guard, extended_data)
 ```
 
-Now compare:
+Then compare:
 
 ```{r}
 comparison <- guardrail_compare(result_v1, result_v2)
 comparison
 ```
 
-The comparison list contains:
+The result is a list with:
 
 | Field             | Meaning                                            |
 |-------------------|----------------------------------------------------|
-| `delta_precision` | Change in precision (positive = improvement)       |
+| `delta_precision` | Change in precision (positive means better)        |
 | `delta_recall`    | Change in recall                                   |
 | `delta_f1`        | Change in F1                                       |
 | `delta_accuracy`  | Change in accuracy                                 |
-| `improved`        | Number of cases that the new version got right but the old got wrong |
-| `regressed`       | Number of cases that the new version got wrong but the old got right |
-| `unchanged`       | Number of cases with the same outcome              |
+| `improved`        | Cases the new version gets right and the old one got wrong |
+| `regressed`       | Cases the new version gets wrong and the old one got right |
+| `unchanged`       | Cases where both versions agree on right or wrong  |
 
-The most important field for regression detection is `regressed`. If it is
-greater than zero, the new guardrail broke something that previously worked:
+`regressed` is the one to watch. If it's above zero, the new version broke
+something that used to work:
 
 ```{r}
 if (comparison$regressed > 0) {
@@ -293,18 +278,17 @@ if (comparison$regressed > 0) {
 cat(sprintf("F1 delta: %+.4f\n", comparison$delta_f1))
 ```
 
-## Regression testing patterns
+## Catching regressions in your tests
 
-A regression test suite ensures guardrails do not degrade over time. The pattern
-is:
+To stop a guardrail from quietly getting worse, keep one test set and add to
+it whenever you find a new attack. Save a baseline, either the metrics or a
+whole `guardrail_eval_result`. After every change, run the guardrail again
+and compare.
 
-1. Maintain a canonical test dataset (growing as you discover new attack vectors)
-2. Store baseline metrics or a baseline `guardrail_eval_result`
-3. After every guardrail change, re-evaluate and compare
+### Check the metrics against a minimum
 
-### Pattern 1: assert on absolute metrics
-
-The simplest approach: assert that key metrics stay above a threshold.
+The simplest check: fail if recall, precision or F1 drops below a number you
+pick.
 
 ```{r}
 test_data <- data.frame(
@@ -334,9 +318,9 @@ stopifnot(m$f1 >= 0.85)
 cat("All metric thresholds met.\n")
 ```
 
-### Pattern 2: assert no regressions against baseline
+### Check that no case got worse
 
-Compare against a saved baseline to make sure no individual case regressed:
+Compare against a saved baseline and fail if any single case regressed:
 
 ```{r}
 # Imagine baseline_result was saved from a previous run
@@ -352,10 +336,11 @@ stopifnot(cmp$regressed == 0)
 cat("No regressions detected.\n")
 ```
 
-### Pattern 3: use benchmark_guardrail() for quick checks
+### Quick checks with benchmark_guardrail()
 
-For a quick smoke test during development, `benchmark_guardrail()` builds the
-dataset for you from positive and negative case vectors:
+While you're working, `benchmark_guardrail()` saves you building a data
+frame. Pass the inputs to block and the inputs to let through as two
+vectors:
 
 ```{r}
 metrics <- benchmark_guardrail(
@@ -376,10 +361,11 @@ metrics <- benchmark_guardrail(
 cat(sprintf("Quick check -- F1: %.2f, Recall: %.2f\n", metrics$f1, metrics$recall))
 ```
 
-### Pattern 4: pipeline benchmarking
+### Benchmarking a pipeline
 
-If you have a multi-stage guardrail pipeline (e.g., first check for prompt
-injection, then check for SQL injection), benchmark the composed pipeline:
+If your guardrail runs several checks in a row, say prompt injection and
+then SQL injection, you can measure them together. `benchmark_pipeline()`
+accepts a function or an object with a `$run()` method:
 
 ```{r}
 pipeline <- list(
@@ -405,19 +391,23 @@ pipeline_metrics <- guardrail_metrics(pipeline_result)
 cat(sprintf("Pipeline F1: %.2f\n", pipeline_metrics$f1))
 ```
 
-## Vitals interop via as_vitals_scorer()
+A secureguard `secure_pipeline()` has no `$run()` method, so pass one of its
+check functions instead, such as `p$check_input`.
 
-The tidyverse's [vitals](https://vitals.tidyverse.org/) package is the
-general-purpose evaluation framework for LLM applications in R.
-`as_vitals_scorer()` wraps any guardrail into a scorer function that vitals
-can use, so securebench's security checks slot into a vitals eval suite.
+## Using a guardrail with vitals
+
+[vitals](https://vitals.tidyverse.org/) is the tidyverse's general framework
+for evaluating LLM apps. It has no security datasets, and securebench isn't
+a general eval framework, so the two cover different ground.
+`as_vitals_scorer()` turns a guardrail into a function that scores a single
+case.
 
 ```{r}
 scorer <- as_vitals_scorer(improved_guard)
 ```
 
-The scorer takes two arguments, `input` (character) and `expected` (logical),
-and returns `1` for a correct judgment or `0` for an incorrect one:
+It takes `input` (a string) and `expected` (`TRUE` or `FALSE`) and returns
+`1` if the guardrail got it right, `0` if not:
 
 ```{r}
 # Correct block: expected=FALSE and guardrail blocked it
@@ -430,12 +420,13 @@ scorer("Hello, how are you?", expected = TRUE)
 scorer("DROP TABLE users", expected = TRUE)
 ```
 
-This means you can use the scorer anywhere vitals expects a scoring function,
-bridging securebench guardrail testing into broader LLM evaluation pipelines.
+A vitals scorer works on a task's whole `samples` data frame, not one case
+at a time. To use this inside a vitals `Task`, call it on each row from a
+small wrapper function.
 
-### Using a scorer on a dataset
+### Scoring a whole data frame
 
-You can manually apply the scorer to a dataset to get per-row scores:
+`mapply()` runs the scorer over every row:
 
 ```{r}
 scores <- mapply(scorer, injection_data$input, injection_data$expected)

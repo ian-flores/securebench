@@ -2,13 +2,13 @@
 % Please edit documentation in R/data-reference.R
 \name{reference_datasets}
 \alias{reference_datasets}
-\title{List available reference dataset names}
+\title{List the bundled datasets}
 \usage{
 reference_datasets()
 }
 \value{
-Character vector.
+A character vector of names you can pass to \code{\link[=load_reference]{load_reference()}}.
 }
 \description{
-List available reference dataset names
+List the bundled datasets
 }

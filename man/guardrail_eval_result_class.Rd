@@ -2,15 +2,17 @@
 % Please edit documentation in R/guardrail-eval.R
 \name{guardrail_eval_result_class}
 \alias{guardrail_eval_result_class}
-\title{S7 class for guardrail evaluation results}
+\title{Guardrail evaluation result}
 \usage{
 guardrail_eval_result_class(results = list())
 }
 \arguments{
-\item{results}{A list of per-case result lists.}
+\item{results}{A list with one element per case. Each element is a list
+with \code{input}, \code{expected}, \code{pass} and \code{label}.}
 }
 \description{
-S7 class for guardrail evaluation results
+The S7 class that \code{\link[=guardrail_eval]{guardrail_eval()}} returns. You rarely need to create
+one yourself.
 }
 \examples{
 res <- guardrail_eval_result_class(results = list(

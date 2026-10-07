@@ -2,20 +2,27 @@
 % Please edit documentation in R/guardrail-eval.R
 \name{guardrail_compare}
 \alias{guardrail_compare}
-\title{Compare two guardrail evaluation results}
+\title{Compare two runs of a guardrail}
 \usage{
 guardrail_compare(baseline, comparison)
 }
 \arguments{
-\item{baseline}{A \code{guardrail_eval_result} (baseline).}
+\item{baseline}{The \code{guardrail_eval_result} to compare against, usually
+the old version.}
 
-\item{comparison}{A \code{guardrail_eval_result} (comparison).}
+\item{comparison}{The new \code{guardrail_eval_result}.}
 }
 \value{
-A named list with delta metrics and per-case comparison counts.
+A named list. \code{delta_precision}, \code{delta_recall}, \code{delta_f1} and
+\code{delta_accuracy} are the new value minus the old one. \code{improved}
+counts cases the new version gets right and the old one got wrong,
+\code{regressed} counts the reverse, and \code{unchanged} counts the rest.
 }
 \description{
-Compare metrics between two guardrail evaluations of the same dataset.
+Compares two results from the same dataset, usually an old and a new
+version of a guardrail. Cases are matched by row position, so both
+runs need the rows in the same order. If one has more rows, the extra
+rows are left out of the per-case counts.
 }
 \examples{
 data <- data.frame(

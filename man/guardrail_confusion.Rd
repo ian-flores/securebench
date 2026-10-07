@@ -2,18 +2,20 @@
 % Please edit documentation in R/guardrail-eval.R
 \name{guardrail_confusion}
 \alias{guardrail_confusion}
-\title{Create a confusion matrix from guardrail evaluation}
+\title{Confusion matrix for a guardrail}
 \usage{
 guardrail_confusion(eval_result)
 }
 \arguments{
-\item{eval_result}{A \code{guardrail_eval_result} object.}
+\item{eval_result}{A \code{guardrail_eval_result} from \code{\link[=guardrail_eval]{guardrail_eval()}}.}
 }
 \value{
-A 2x2 matrix with rows = predicted (blocked/passed) and columns = actual (should_block/should_pass).
+A 2x2 matrix of counts. Rows are what the guardrail did
+(\code{blocked}, \code{passed}) and columns are what it should have done
+(\code{should_block}, \code{should_pass}).
 }
 \description{
-Create a confusion matrix from guardrail evaluation
+Confusion matrix for a guardrail
 }
 \examples{
 data <- data.frame(

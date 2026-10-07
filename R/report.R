@@ -1,9 +1,14 @@
-#' Generate a guardrail evaluation report
+#' Report on a guardrail run
 #'
-#' @param eval_result A `guardrail_eval_result` object.
-#' @param format Output format: `"console"` or `"data.frame"`.
-#' @return For `"console"`, prints formatted output and returns `eval_result` invisibly.
-#'   For `"data.frame"`, returns a data.frame.
+#' Shows the metrics and whether the guardrail got each case right.
+#'
+#' @param eval_result A `guardrail_eval_result` from [guardrail_eval()].
+#' @param format `"console"` to print a summary, or `"data.frame"` to get one
+#'   row per case.
+#' @return For `"console"`, prints the metrics and a line per case marked
+#'   `OK` or `WRONG`, and returns `eval_result` invisibly. For
+#'   `"data.frame"`, returns a data frame with columns `input`,
+#'   `expected_pass`, `actual_pass`, `correct` and `label`.
 #' @export
 #' @examples
 #' data <- data.frame(

@@ -1,7 +1,11 @@
-#' S7 class for guardrail evaluation results
+#' Guardrail evaluation result
+#'
+#' The S7 class that [guardrail_eval()] returns. You rarely need to create
+#' one yourself.
 #'
 #' @name guardrail_eval_result_class
-#' @param results A list of per-case result lists.
+#' @param results A list with one element per case. Each element is a list
+#'   with `input`, `expected`, `pass` and `label`.
 #' @examples
 #' res <- guardrail_eval_result_class(results = list(
 #'   list(input = "hello", expected = TRUE, pass = TRUE, label = "benign")
@@ -42,17 +46,27 @@ guardrail_eval_result_class <- S7::new_class("guardrail_eval_result", properties
   isTRUE(result)
 }
 
-#' Evaluate a guardrail against a dataset
+#' Run a guardrail on a labeled dataset
 #'
-#' Runs a guardrail function against each row in a data frame.
-#' Each row should have `input` as the text to check and `expected`
-#' as `TRUE` (should pass) or `FALSE` (should block).
+#' Runs the guardrail on each row of a data frame and records whether it
+#' let the input through. Each row has the text to check in `input` and
+#' the right answer in `expected`: `TRUE` if the input should get through,
+#' `FALSE` if it should be blocked.
 #'
-#' @param guardrail A function that takes a text input and returns `TRUE`
-#'   (pass) or `FALSE` (block), or a secureguard guardrail object.
-#' @param data A data.frame with columns `input` (character) and `expected`
-#'   (logical). An optional `label` column provides category labels.
-#' @return A `guardrail_eval_result` object.
+#' If the guardrail throws an error on an input, that input counts as
+#' blocked.
+#'
+#' @param guardrail The guardrail to test. This can be a function that
+#'   takes a string and returns `TRUE` (let through) or `FALSE` (block), a
+#'   secureguard guardrail, or a list with a `$check()` or `$run()`
+#'   function. The function may also return a list or object with a `pass`
+#'   field, such as a secureguard result.
+#' @param data A data frame with columns `input` (character) and `expected`
+#'   (logical). An optional `label` column says what kind of case each row
+#'   is.
+#' @return A `guardrail_eval_result` object. Pass it to
+#'   [guardrail_metrics()], [guardrail_confusion()], [guardrail_report()]
+#'   or [guardrail_compare()].
 #' @export
 #' @examples
 #' data <- data.frame(
@@ -120,19 +134,24 @@ guardrail_eval <- function(guardrail, data) {
   }
 }
 
-#' Compute guardrail evaluation metrics
+#' Precision, recall and other metrics for a guardrail
 #'
-#' Computes precision, recall, F1, accuracy, and confusion counts from
-#' a guardrail evaluation result.
+#' Counts the guardrail's right and wrong calls and computes precision,
+#' recall, F1 and accuracy from them.
 #'
-#' Convention: blocking is the "positive" class.
-#' - True positive: expected=FALSE (should block) and pass=FALSE (was blocked)
-#' - True negative: expected=TRUE (should pass) and pass=TRUE (was passed)
-#' - False positive: expected=TRUE (should pass) but pass=FALSE (was blocked)
-#' - False negative: expected=FALSE (should block) but pass=TRUE (was passed)
+#' Blocking counts as the positive result:
+#' - True positive: should be blocked, and was.
+#' - True negative: should get through, and did.
+#' - False positive: should get through, but was blocked.
+#' - False negative: should be blocked, but got through.
 #'
-#' @param eval_result A `guardrail_eval_result` object.
-#' @return A named list with tp, tn, fp, fn, precision, recall, f1, accuracy.
+#' A metric is `NA` when its denominator is zero, for example precision
+#' when the guardrail blocked nothing.
+#'
+#' @param eval_result A `guardrail_eval_result` from [guardrail_eval()].
+#' @return A named list with `true_positives`, `true_negatives`,
+#'   `false_positives`, `false_negatives`, `precision`, `recall`, `f1` and
+#'   `accuracy`.
 #' @export
 #' @examples
 #' data <- data.frame(
@@ -207,10 +226,12 @@ guardrail_metrics <- function(eval_result) {
   }
 }
 
-#' Create a confusion matrix from guardrail evaluation
+#' Confusion matrix for a guardrail
 #'
-#' @param eval_result A `guardrail_eval_result` object.
-#' @return A 2x2 matrix with rows = predicted (blocked/passed) and columns = actual (should_block/should_pass).
+#' @param eval_result A `guardrail_eval_result` from [guardrail_eval()].
+#' @return A 2x2 matrix of counts. Rows are what the guardrail did
+#'   (`blocked`, `passed`) and columns are what it should have done
+#'   (`should_block`, `should_pass`).
 #' @export
 #' @examples
 #' data <- data.frame(
@@ -233,13 +254,20 @@ guardrail_confusion <- function(eval_result) {
   mat
 }
 
-#' Compare two guardrail evaluation results
+#' Compare two runs of a guardrail
 #'
-#' Compare metrics between two guardrail evaluations of the same dataset.
+#' Compares two results from the same dataset, usually an old and a new
+#' version of a guardrail. Cases are matched by row position, so both
+#' runs need the rows in the same order. If one has more rows, the extra
+#' rows are left out of the per-case counts.
 #'
-#' @param baseline A `guardrail_eval_result` (baseline).
-#' @param comparison A `guardrail_eval_result` (comparison).
-#' @return A named list with delta metrics and per-case comparison counts.
+#' @param baseline The `guardrail_eval_result` to compare against, usually
+#'   the old version.
+#' @param comparison The new `guardrail_eval_result`.
+#' @return A named list. `delta_precision`, `delta_recall`, `delta_f1` and
+#'   `delta_accuracy` are the new value minus the old one. `improved`
+#'   counts cases the new version gets right and the old one got wrong,
+#'   `regressed` counts the reverse, and `unchanged` counts the rest.
 #' @export
 #' @examples
 #' data <- data.frame(
@@ -317,9 +345,9 @@ method(print, guardrail_eval_result_class) <- function(x, ...) {
   invisible(x)
 }
 
-#' Format a metric value for display
-#' @param x A numeric value or NA.
-#' @return A formatted string.
+#' Format a metric for printing
+#' @param x A number or NA.
+#' @return A string with four decimal places, or `"NA"`.
 #' @noRd
 format_metric <- function(x) {
   if (is.na(x)) "NA" else sprintf("%.4f", x)

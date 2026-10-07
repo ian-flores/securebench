@@ -1,33 +1,33 @@
-#' Bundled reference datasets for guardrail benchmarking
+#' Load a bundled test dataset
 #'
-#' Ships three small synthetic, labeled datasets suitable as
-#' quick-start benchmarks for the common guardrail families. Each
-#' dataset is a `data.frame` with columns `input` (character),
-#' `expected` (logical — whether the row should be blocked), and
-#' `label` (category tag for slicing results).
+#' Loads one of three small labeled datasets that come with the package,
+#' so you can try a guardrail before building your own test set. Each is
+#' a data frame with columns `input` (character), `expected` (logical:
+#' `TRUE` if the input should get through, `FALSE` if it should be
+#' blocked), and `label` (the kind of case, such as `"benign"` or
+#' `"email"`).
 #'
-#' Available dataset names:
+#' The datasets are:
 #' \itemize{
-#'   \item `"injection_basic"` — classic prompt-injection patterns and
-#'     benign prompts. ~50 rows. Use against
-#'     [secureguard::guard_prompt_injection()] and friends.
-#'   \item `"pii_basic"` — PII strings (emails, SSN-shaped, phones,
-#'     credit cards, IBAN, MAC, etc.) plus benign text. ~50 rows. Use
-#'     against [secureguard::guard_input_pii()] or
+#'   \item `"injection_basic"`: 50 rows of prompt injection attempts and
+#'     ordinary prompts. Try it with
+#'     [secureguard::guard_prompt_injection()].
+#'   \item `"pii_basic"`: 50 rows of personal data (emails, SSNs, phone
+#'     numbers, credit cards, IBANs, MAC addresses and more) and ordinary
+#'     text. Try it with [secureguard::guard_input_pii()] or
 #'     [secureguard::guard_output_pii()].
-#'   \item `"secrets_basic"` — secret-looking tokens (AWS, GitHub, JWT,
-#'     database URLs, high-entropy strings) plus benign text. ~50 rows.
-#'     Use against [secureguard::guard_output_secrets()].
+#'   \item `"secrets_basic"`: 49 rows of credentials (AWS and GitHub
+#'     keys, JWTs, database URLs, random-looking tokens and more) and
+#'     ordinary text. Try it with [secureguard::guard_output_secrets()].
 #' }
 #'
-#' The datasets are intentionally small and synthetic. They are meant
-#' as smoke tests and ergonomic templates, not as a rigorous
-#' benchmark. For serious evaluation, bring your own labeled corpus
-#' (ideally harvested from production logs) and pass it directly to
-#' [guardrail_eval()].
+#' The examples are synthetic and there aren't many of them. Use them
+#' for a smoke test or as a template for your own data. For a benchmark
+#' you can rely on, build a labeled set from real inputs, such as your
+#' production logs, and pass it to [guardrail_eval()].
 #'
-#' @param name Character scalar; one of the names listed above.
-#' @return A `data.frame` with columns `input`, `expected`, `label`.
+#' @param name The dataset name, one of the names listed above.
+#' @return A data frame with columns `input`, `expected` and `label`.
 #' @export
 #' @examples
 #' df <- load_reference("injection_basic")
@@ -64,9 +64,9 @@ load_reference <- function(name) {
   df
 }
 
-#' List available reference dataset names
+#' List the bundled datasets
 #'
-#' @return Character vector.
+#' @return A character vector of names you can pass to [load_reference()].
 #' @export
 reference_datasets <- function() {
   c("injection_basic", "pii_basic", "secrets_basic")

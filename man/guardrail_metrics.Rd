@@ -2,28 +2,33 @@
 % Please edit documentation in R/guardrail-eval.R
 \name{guardrail_metrics}
 \alias{guardrail_metrics}
-\title{Compute guardrail evaluation metrics}
+\title{Precision, recall and other metrics for a guardrail}
 \usage{
 guardrail_metrics(eval_result)
 }
 \arguments{
-\item{eval_result}{A \code{guardrail_eval_result} object.}
+\item{eval_result}{A \code{guardrail_eval_result} from \code{\link[=guardrail_eval]{guardrail_eval()}}.}
 }
 \value{
-A named list with tp, tn, fp, fn, precision, recall, f1, accuracy.
+A named list with \code{true_positives}, \code{true_negatives},
+\code{false_positives}, \code{false_negatives}, \code{precision}, \code{recall}, \code{f1} and
+\code{accuracy}.
 }
 \description{
-Computes precision, recall, F1, accuracy, and confusion counts from
-a guardrail evaluation result.
+Counts the guardrail's right and wrong calls and computes precision,
+recall, F1 and accuracy from them.
 }
 \details{
-Convention: blocking is the "positive" class.
+Blocking counts as the positive result:
 \itemize{
-\item True positive: expected=FALSE (should block) and pass=FALSE (was blocked)
-\item True negative: expected=TRUE (should pass) and pass=TRUE (was passed)
-\item False positive: expected=TRUE (should pass) but pass=FALSE (was blocked)
-\item False negative: expected=FALSE (should block) but pass=TRUE (was passed)
+\item True positive: should be blocked, and was.
+\item True negative: should get through, and did.
+\item False positive: should get through, but was blocked.
+\item False negative: should be blocked, but got through.
 }
+
+A metric is \code{NA} when its denominator is zero, for example precision
+when the guardrail blocked nothing.
 }
 \examples{
 data <- data.frame(

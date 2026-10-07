@@ -2,23 +2,23 @@
 % Please edit documentation in R/integration.R
 \name{benchmark_guardrail}
 \alias{benchmark_guardrail}
-\title{Benchmark a guardrail with positive and negative cases}
+\title{Benchmark a guardrail from two lists of cases}
 \usage{
 benchmark_guardrail(guardrail, positive_cases, negative_cases)
 }
 \arguments{
 \item{guardrail}{A guardrail function or object (see \code{\link[=guardrail_eval]{guardrail_eval()}}).}
 
-\item{positive_cases}{Character vector of inputs that SHOULD be blocked.}
+\item{positive_cases}{Character vector of inputs that should be blocked.}
 
-\item{negative_cases}{Character vector of inputs that should NOT be blocked.}
+\item{negative_cases}{Character vector of inputs that should get through.}
 }
 \value{
-A named list of metrics (see \code{\link[=guardrail_metrics]{guardrail_metrics()}}).
+A named list of metrics, as from \code{\link[=guardrail_metrics]{guardrail_metrics()}}.
 }
 \description{
-Convenience wrapper that constructs a data frame, runs \code{\link[=guardrail_eval]{guardrail_eval()}},
-and returns \code{\link[=guardrail_metrics]{guardrail_metrics()}}.
+A shortcut for quick checks. It builds the data frame for you, runs
+\code{\link[=guardrail_eval]{guardrail_eval()}} and returns \code{\link[=guardrail_metrics]{guardrail_metrics()}}.
 }
 \examples{
 my_guard <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)

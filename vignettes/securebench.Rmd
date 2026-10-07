@@ -1,8 +1,8 @@
 ---
-title: "Getting Started with securebench"
+title: "Getting started with securebench"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting Started with securebench}
+  %\VignetteIndexEntry{Getting started with securebench}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,111 +15,93 @@ knitr::opts_chunk$set(
 )
 ```
 
-## What securebench is
+## What securebench is for
 
-securebench provides security-specific benchmark datasets and evaluation
-harnesses for R LLM agents: prompt-injection resistance, dangerous-code
-detection, PII/secret leakage, and A/B comparison of guardrail
-configurations (such as [secureguard](https://github.com/ian-flores/secureguard)
-pipelines).
+securebench measures how well a guardrail does its job. You give it a
+guardrail and some labeled examples, and it tells you how many attacks the
+guardrail caught and how many harmless inputs it blocked by mistake. It's
+meant for security checks: prompt injection, dangerous code, leaked personal
+data and secrets, and comparing two versions of a guardrail such as a
+[secureguard](https://github.com/ian-flores/secureguard) pipeline.
 
-It is deliberately narrow. For general-purpose LLM evaluation in R -- tasks,
-solvers, model-graded scoring -- use the tidyverse's
-[vitals](https://vitals.tidyverse.org/) package. securebench complements
-vitals rather than competing with it: it covers the security niche vitals
-does not, and any guardrail exports as a vitals-compatible scorer via
-`as_vitals_scorer()` so security checks can run inside a vitals eval suite.
+It is not a general LLM evaluation framework. For tasks, solvers and
+model-graded scoring, use the tidyverse's
+[vitals](https://vitals.tidyverse.org/) package. vitals has no security
+datasets, which is the gap securebench fills.
 
-## Why benchmark guardrails?
+## Why measure a guardrail?
 
-Every guardrail in an AI agent system makes a binary decision: let the input
-through, or block it. Getting that decision wrong has real consequences, and
-the failure modes cut both ways.
+A guardrail makes a yes-or-no call on every input: let it through or block
+it. It can be wrong in two ways.
 
-A guardrail that is **too strict** blocks legitimate user requests. Your agent
-becomes frustrating to use: users write normal queries and get rejected. A
-support chatbot that flags "how do I delete my account?" as a SQL injection
-attack is protecting nothing while alienating everyone. This is the
-**false alarm** problem: the guardrail cries wolf, and eventually people either
-abandon the system or find ways to route around it.
+If it's too strict, it blocks normal requests. A support bot that treats
+"how do I delete my account?" as a SQL injection attack isn't protecting
+anyone. It just annoys users, and sooner or later they stop using it or find
+a way around it. These mistakes are false alarms.
 
-A guardrail that is **too loose** lets attacks slip through. Prompt injections
-reach your LLM, SQL injection payloads hit your database, and code execution
-attacks run in your sandbox. This is the **missed attack** problem, and in
-security contexts it is almost always the more dangerous failure mode. One
-missed attack can compromise an entire system; a hundred false alarms are merely
-annoying.
+If it's too loose, attacks get through. Prompt injections reach the model,
+SQL payloads reach the database, and malicious code runs in your sandbox.
+These are missed attacks. In security work they're usually the worse
+mistake, since one missed attack can do real damage while a false alarm
+mostly costs someone's patience.
 
-Benchmarking quantifies this trade-off. Instead of guessing whether your
-guardrail is "good enough," you measure exactly how often it makes each type
-of mistake. securebench evaluates any guardrail function against a labeled
-dataset and computes the metrics that matter.
+Measuring tells you how often each mistake happens, instead of guessing.
 
-## The metrics: precision, recall, and F1
+## Precision, recall and F1
 
-Three metrics capture the trade-off between false alarms and missed attacks.
-You need to understand them before looking at benchmark output.
+Precision asks: of everything the guardrail blocked, how much was really an
+attack? A precision of 0.90 means 9 in 10 blocks were attacks and 1 in 10
+was a false alarm.
 
-**Precision** answers: "Of everything the guardrail flagged as an attack, how
-much actually was an attack?" A precision of 0.90 means 90% of the inputs the
-guardrail blocked were genuinely dangerous, and 10% were false alarms. High
-precision means few false alarms, which keeps the user experience smooth.
+Recall asks: of all the attacks in the dataset, how many did the guardrail
+block? A recall of 0.80 means it caught 80% of attacks and missed 20%.
 
-**Recall** answers: "Of all actual attacks in the dataset, how many did the
-guardrail catch?" A recall of 0.80 means the guardrail caught 80% of threats
-and missed 20%. High recall means few missed attacks, which keeps the system
-secure.
+F1 combines the two into one number using the harmonic mean, which drags the
+score down when either one is low. A guardrail with 0.99 precision and 0.10
+recall gets an F1 of 0.18, where a plain average would give 0.55. So F1 is
+only high when both precision and recall are.
 
-**F1 score** is the harmonic mean of precision and recall. Unlike a simple
-average, the harmonic mean penalizes imbalance: a guardrail with 0.99 precision
-but 0.10 recall gets an F1 of 0.18, not 0.55. This makes F1 a single number
-that only looks good when *both* precision and recall are strong.
-
-In security applications, you typically prioritize recall (catching threats)
-over precision (avoiding false alarms), but the right balance depends on your
-context. An air-gapped code execution sandbox can tolerate more false alarms
-than a customer-facing chatbot.
+In security you usually care more about recall than precision, but it
+depends on the setting. A sandbox that only you use can put up with more
+false alarms than a chatbot your customers talk to.
 
 ## The confusion matrix
 
-All four metrics come from a 2x2 confusion matrix. Here is how it maps to
-security outcomes:
+All of these numbers come from a 2x2 table of what the guardrail did against
+what it should have done:
 
+```{=html}
+<figure class="hairline">
+<svg role="img" aria-label="Two by two table: blocked or passed, against dangerous or safe" viewBox="0 0 640 270" xmlns="http://www.w3.org/2000/svg"><defs>
+<marker id="cm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M1 1L9 5L1 9" fill="none" stroke="#2b1f12" stroke-width="1"/></marker>
+<pattern id="cm-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<line x1="0" y1="0" x2="0" y2="6" stroke="#bf5a36" stroke-width="0.6" opacity="0.55"/></pattern>
+</defs><text x="400" y="26" font-family="Space Mono, ui-monospace, monospace" font-size="10" fill="#6b5638" text-anchor="middle" font-weight="400" letter-spacing="2" >WHAT THE INPUT WAS</text><path d="M210 36H590" stroke="#cdb48a" stroke-width="0.75"/><path d="M210 32V40M590 32V40" stroke="#cdb48a" stroke-width="0.75"/><text x="305.0" y="58" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >DANGEROUS</text><text x="495.0" y="58" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="middle" font-weight="400" letter-spacing="1.2" >SAFE</text><text x="40" y="162" font-family="Space Mono, ui-monospace, monospace" font-size="10" fill="#6b5638" text-anchor="middle" font-weight="400" letter-spacing="2" transform="rotate(-90 40 162)">WHAT THE GUARDRAIL DID</text><path d="M54 70V254" stroke="#cdb48a" stroke-width="0.75"/><path d="M50 70H58M50 254H58" stroke="#cdb48a" stroke-width="0.75"/><text x="188" y="120.0" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="end" font-weight="400" letter-spacing="1.2" >BLOCKED</text><text x="188" y="212.0" font-family="Space Mono, ui-monospace, monospace" font-size="10.5" fill="#2b1f12" text-anchor="end" font-weight="400" letter-spacing="1.2" >PASSED</text><rect x="210" y="70" width="190" height="92" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="305.0" y="113.0" font-family="Space Mono, ui-monospace, monospace" font-size="11" fill="#2b1f12" text-anchor="middle" font-weight="700" letter-spacing="1.2" >TRUE POSITIVE</text><text x="305.0" y="131.0" font-family="Space Mono, ui-monospace, monospace" font-size="9.5" fill="#6b5638" text-anchor="middle" font-weight="400" letter-spacing="0.4" >caught it</text><rect x="400" y="70" width="190" height="92" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="495.0" y="113.0" font-family="Space Mono, ui-monospace, monospace" font-size="11" fill="#2b1f12" text-anchor="middle" font-weight="700" letter-spacing="1.2" >FALSE ALARM</text><text x="495.0" y="131.0" font-family="Space Mono, ui-monospace, monospace" font-size="9.5" fill="#6b5638" text-anchor="middle" font-weight="400" letter-spacing="0.4" >blocked a safe input</text><rect x="210" y="162" width="190" height="92" fill="url(#cm-hatch)" stroke="#bf5a36" stroke-width="0.75"/><text x="305.0" y="205.0" font-family="Space Mono, ui-monospace, monospace" font-size="11" fill="#bf5a36" text-anchor="middle" font-weight="700" letter-spacing="1.2" >MISSED ATTACK</text><text x="305.0" y="223.0" font-family="Space Mono, ui-monospace, monospace" font-size="9.5" fill="#6b5638" text-anchor="middle" font-weight="400" letter-spacing="0.4" >the worst case</text><rect x="400" y="162" width="190" height="92" fill="none" stroke="#2b1f12" stroke-width="0.75"/><text x="495.0" y="205.0" font-family="Space Mono, ui-monospace, monospace" font-size="11" fill="#2b1f12" text-anchor="middle" font-weight="700" letter-spacing="1.2" >TRUE NEGATIVE</text><text x="495.0" y="223.0" font-family="Space Mono, ui-monospace, monospace" font-size="9.5" fill="#6b5638" text-anchor="middle" font-weight="400" letter-spacing="0.4" >let it through</text></svg>
+<figcaption>Fig. 1 &middot; What the guardrail did, against what it should have done</figcaption>
+</figure>
 ```
-                        Actual Status
-                   +-----------+-----------+
-                   |  Dangerous |   Safe    |
-        +----------+-----------+-----------+
- Guard  | Blocked  |  TRUE     |  FALSE    |
- rail   |          |  POSITIVE |  ALARM    |
- Said:  +----------+-----------+-----------+
-        | Passed   |  MISSED   |  TRUE     |
-        |          |  ATTACK   |  NEGATIVE |
-        +----------+-----------+-----------+
-```
 
-Reading each cell:
+Top left: the input was dangerous and the guardrail blocked it. That's what
+you want.
 
-- **True Positive (top-left):** The input was dangerous and the guardrail
-  blocked it. This is the ideal outcome for threats.
-- **False Alarm (top-right):** The input was safe but the guardrail blocked it
-  anyway. Annoying but not dangerous.
-- **Missed Attack (bottom-left):** The input was dangerous but the guardrail
-  let it through. This is the worst outcome in security contexts.
-- **True Negative (bottom-right):** The input was safe and the guardrail let it
-  through. This is the ideal outcome for legitimate requests.
+Top right: the input was safe but got blocked. A false alarm.
+
+Bottom left: the input was dangerous and got through. A missed attack, and
+the worst case.
+
+Bottom right: the input was safe and got through. Also what you want.
 
 The formulas:
 
-- Precision = True Positives / (True Positives + False Alarms)
-- Recall = True Positives / (True Positives + Missed Attacks)
+- Precision = True positives / (True positives + False alarms)
+- Recall = True positives / (True positives + Missed attacks)
 - F1 = 2 * Precision * Recall / (Precision + Recall)
 
-## Quick start: benchmark_guardrail()
+## A first benchmark
 
-Now that you know what the numbers mean, here is how to compute them. The fastest
-path is `benchmark_guardrail()`, which takes a guardrail function and two
-vectors: inputs that should be blocked and inputs that should pass.
+The quickest way in is `benchmark_guardrail()`. Give it a guardrail and two
+vectors: inputs that should be blocked and inputs that should get through.
 
 ```{r}
 library(securebench)
@@ -139,16 +121,15 @@ metrics$f1
 metrics$accuracy
 ```
 
-The `positive_cases` are inputs the guardrail should **block** (dangerous), and
-`negative_cases` are inputs it should **pass** (safe). securebench evaluates
-each one, checks whether the guardrail got it right, and computes all four
-metrics.
+`positive_cases` are the inputs it should block. `negative_cases` are the
+ones it should let through. securebench runs the guardrail on each and
+computes the four numbers.
 
-## Using data frames for more control
+## Using a data frame
 
-For larger or more structured test suites, pass a data frame with `input` and
-`expected` columns. The `expected` column uses the convention `TRUE` = safe
-(should pass), `FALSE` = dangerous (should block):
+For bigger test sets, use a data frame with `input` and `expected` columns.
+`expected` is `TRUE` when the input is safe and should get through, and
+`FALSE` when it's dangerous and should be blocked:
 
 ```{r}
 data <- data.frame(
@@ -162,31 +143,33 @@ m <- guardrail_metrics(result)
 cm <- guardrail_confusion(result)
 ```
 
-The `label` column is optional but recommended; it helps you see which
-*categories* of attack a guardrail struggles with when you generate reports.
+The `label` column is optional. It's worth adding, because it shows you
+which kinds of attack a guardrail misses when you look at the report.
 
-## Interpreting results
+If the guardrail throws an error on an input, securebench counts that input
+as blocked.
 
-Once you have metrics, here is what they mean in practice:
+## Reading the numbers
 
-| Metric | Value | Interpretation |
+Some rough guidance:
+
+| Metric | Value | What it means |
 |--------|-------|---------------|
-| Precision = 1.00 | Perfect | Every block was justified, no false alarms |
-| Precision = 0.50 | Concerning | Half of all blocks were false alarms |
+| Precision = 1.00 | Perfect | Every block was a real attack |
+| Precision = 0.50 | Worrying | Half of all blocks were false alarms |
 | Recall = 1.00 | Perfect | Every attack was caught |
-| Recall = 0.50 | Dangerous | Half of all attacks slipped through |
-| F1 = 1.00 | Perfect | Both precision and recall are perfect |
-| F1 < 0.70 | Needs work | Significant imbalance or poor performance |
+| Recall = 0.50 | Dangerous | Half of all attacks got through |
+| F1 = 1.00 | Perfect | Precision and recall are both perfect |
+| F1 < 0.70 | Needs work | One of the two is weak, or both are |
 
-A common pattern: your guardrail has high recall but low precision (catches
-everything, but also blocks too many safe inputs). The fix is usually to make
-the detection patterns more specific. The reverse, high precision with low
-recall, means the guardrail is confident when it blocks but misses many
-threats. The fix is usually to add more detection patterns.
+High recall with low precision means the guardrail catches everything but
+also blocks too many safe inputs. Making the patterns more specific usually
+helps. High precision with low recall is the opposite: when it blocks, it's
+right, but it misses a lot. That usually means you need more patterns.
 
 ## Reports
 
-Generate formatted reports for interactive exploration or programmatic analysis:
+`guardrail_report()` prints a summary or returns a data frame:
 
 ```{r}
 guardrail_report(result, format = "console")
@@ -195,15 +178,13 @@ df <- guardrail_report(result, format = "data.frame")
 head(df)
 ```
 
-The console format prints a quick summary during development. The data frame
-format lets you filter to specific failures, group by label, or feed results
-into downstream analysis.
+The console version is handy while you're working. The data frame has one
+row per case, so you can filter to the failures or group them by label.
 
-## Comparing guardrails
+## Comparing two versions
 
-When you change a guardrail, you need to check that the change actually helped
-and that nothing regressed. `guardrail_compare()` takes a baseline and a new result
-and shows exactly what changed:
+When you change a guardrail, check that the change helped and didn't break
+anything. `guardrail_compare()` takes the old result and the new one:
 
 ```{r}
 improved_guard <- function(text) {
@@ -217,15 +198,14 @@ comparison$improved
 comparison$regressed
 ```
 
-The `regressed` count is the most important field: if it is greater than zero,
-the new guardrail broke something that previously worked. Even a small
-regression in recall can mean a real attack vector re-opened.
+Watch `regressed`. It counts cases the new version gets wrong that the old
+one got right. If it's above zero, the change broke something, and that
+could mean an attack the old version blocked now gets through.
 
-## Vitals interop
+## Using a guardrail with vitals
 
-[vitals](https://vitals.tidyverse.org/) is the general LLM evaluation
-framework for R. Export any guardrail as a vitals-compatible scorer to run
-securebench's security checks inside broader vitals evaluation pipelines:
+`as_vitals_scorer()` turns a guardrail into a function that scores one case:
+1 if the guardrail got it right, 0 if not.
 
 ```{r}
 scorer <- as_vitals_scorer(my_guardrail)
@@ -233,9 +213,15 @@ scorer("safe query", TRUE)    # 1 (correct)
 scorer("DROP TABLE x", FALSE) # 1 (correct)
 ```
 
-## Pipeline benchmarking
+vitals scorers take a task's whole `samples` data frame rather than one case
+at a time, so to use this in a vitals `Task`, call it on each row from a
+small wrapper.
 
-Evaluate a full multi-stage guardrail pipeline against a dataset:
+## Benchmarking a pipeline
+
+`benchmark_pipeline()` works like `guardrail_eval()`, but also accepts an
+object with a `$run()` method. Use it when several checks run in a row and
+you want to measure them together:
 
 ```{r}
 pipeline <- list(run = function(text) {
@@ -246,11 +232,10 @@ result <- benchmark_pipeline(pipeline, data)
 guardrail_metrics(result)
 ```
 
-Use this when your production guardrail composes multiple checks (prompt
-injection, SQL injection, code injection) and you want to measure the accuracy
-of the whole chain.
+A secureguard `secure_pipeline()` has no `$run()` method. Pass one of its
+check functions instead, for example `benchmark_pipeline(p$check_input, data)`.
 
 ## Next steps
 
-For deeper testing patterns, including regression testing, version comparison
-workflows, and advanced pipeline benchmarking, see `vignette("testing-patterns")`.
+`vignette("testing-patterns")` covers building test sets, catching
+regressions in your tests, and more on comparing versions.

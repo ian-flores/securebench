@@ -2,22 +2,30 @@
 % Please edit documentation in R/integration.R
 \name{benchmark_pipeline}
 \alias{benchmark_pipeline}
-\title{Benchmark a guardrail pipeline end-to-end}
+\title{Benchmark a pipeline of checks}
 \usage{
 benchmark_pipeline(pipeline, data)
 }
 \arguments{
-\item{pipeline}{A function that takes an input and returns TRUE (pass)
-or FALSE (block), or an object with a \verb{$run} method.}
+\item{pipeline}{A function that takes an input and returns \code{TRUE} (let
+through) or \code{FALSE} (block), or a list with a \verb{$run()} function.}
 
-\item{data}{A data.frame with columns \code{input} (character) and \code{expected}
-(logical). An optional \code{label} column provides category labels.}
+\item{data}{A data frame with columns \code{input} (character) and \code{expected}
+(logical). An optional \code{label} column says what kind of case each row
+is.}
 }
 \value{
 A \code{guardrail_eval_result} object.
 }
 \description{
-Evaluate a secureguard pipeline against a labeled dataset.
+Runs several checks that act as one guardrail on a labeled dataset.
+It works like \code{\link[=guardrail_eval]{guardrail_eval()}}, but also accepts an object with a
+\verb{$run()} method.
+}
+\details{
+A secureguard \code{\link[secureguard:secure_pipeline]{secureguard::secure_pipeline()}} has no \verb{$run()} method.
+Pass one of its check functions instead, such as
+\code{benchmark_pipeline(p$check_input, data)}.
 }
 \examples{
 data <- data.frame(

@@ -2,43 +2,43 @@
 % Please edit documentation in R/data-reference.R
 \name{load_reference}
 \alias{load_reference}
-\title{Bundled reference datasets for guardrail benchmarking}
+\title{Load a bundled test dataset}
 \usage{
 load_reference(name)
 }
 \arguments{
-\item{name}{Character scalar; one of the names listed above.}
+\item{name}{The dataset name, one of the names listed above.}
 }
 \value{
-A \code{data.frame} with columns \code{input}, \code{expected}, \code{label}.
+A data frame with columns \code{input}, \code{expected} and \code{label}.
 }
 \description{
-Ships three small synthetic, labeled datasets suitable as
-quick-start benchmarks for the common guardrail families. Each
-dataset is a \code{data.frame} with columns \code{input} (character),
-\code{expected} (logical -- whether the row should be blocked), and
-\code{label} (category tag for slicing results).
+Loads one of three small labeled datasets that come with the package,
+so you can try a guardrail before building your own test set. Each is
+a data frame with columns \code{input} (character), \code{expected} (logical:
+\code{TRUE} if the input should get through, \code{FALSE} if it should be
+blocked), and \code{label} (the kind of case, such as \code{"benign"} or
+\code{"email"}).
 }
 \details{
-Available dataset names:
+The datasets are:
 \itemize{
-\item \code{"injection_basic"} -- classic prompt-injection patterns and
-benign prompts. ~50 rows. Use against
-\code{\link[secureguard:guard_prompt_injection]{secureguard::guard_prompt_injection()}} and friends.
-\item \code{"pii_basic"} -- PII strings (emails, SSN-shaped, phones,
-credit cards, IBAN, MAC, etc.) plus benign text. ~50 rows. Use
-against \code{\link[secureguard:guard_input_pii]{secureguard::guard_input_pii()}} or
+\item \code{"injection_basic"}: 50 rows of prompt injection attempts and
+ordinary prompts. Try it with
+\code{\link[secureguard:guard_prompt_injection]{secureguard::guard_prompt_injection()}}.
+\item \code{"pii_basic"}: 50 rows of personal data (emails, SSNs, phone
+numbers, credit cards, IBANs, MAC addresses and more) and ordinary
+text. Try it with \code{\link[secureguard:guard_input_pii]{secureguard::guard_input_pii()}} or
 \code{\link[secureguard:guard_output_pii]{secureguard::guard_output_pii()}}.
-\item \code{"secrets_basic"} -- secret-looking tokens (AWS, GitHub, JWT,
-database URLs, high-entropy strings) plus benign text. ~50 rows.
-Use against \code{\link[secureguard:guard_output_secrets]{secureguard::guard_output_secrets()}}.
+\item \code{"secrets_basic"}: 49 rows of credentials (AWS and GitHub
+keys, JWTs, database URLs, random-looking tokens and more) and
+ordinary text. Try it with \code{\link[secureguard:guard_output_secrets]{secureguard::guard_output_secrets()}}.
 }
 
-The datasets are intentionally small and synthetic. They are meant
-as smoke tests and ergonomic templates, not as a rigorous
-benchmark. For serious evaluation, bring your own labeled corpus
-(ideally harvested from production logs) and pass it directly to
-\code{\link[=guardrail_eval]{guardrail_eval()}}.
+The examples are synthetic and there aren't many of them. Use them
+for a smoke test or as a template for your own data. For a benchmark
+you can rely on, build a labeled set from real inputs, such as your
+production logs, and pass it to \code{\link[=guardrail_eval]{guardrail_eval()}}.
 }
 \examples{
 df <- load_reference("injection_basic")

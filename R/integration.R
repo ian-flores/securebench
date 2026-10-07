@@ -1,12 +1,12 @@
-#' Benchmark a guardrail with positive and negative cases
+#' Benchmark a guardrail from two lists of cases
 #'
-#' Convenience wrapper that constructs a data frame, runs [guardrail_eval()],
-#' and returns [guardrail_metrics()].
+#' A shortcut for quick checks. It builds the data frame for you, runs
+#' [guardrail_eval()] and returns [guardrail_metrics()].
 #'
 #' @param guardrail A guardrail function or object (see [guardrail_eval()]).
-#' @param positive_cases Character vector of inputs that SHOULD be blocked.
-#' @param negative_cases Character vector of inputs that should NOT be blocked.
-#' @return A named list of metrics (see [guardrail_metrics()]).
+#' @param positive_cases Character vector of inputs that should be blocked.
+#' @param negative_cases Character vector of inputs that should get through.
+#' @return A named list of metrics, as from [guardrail_metrics()].
 #' @export
 #' @examples
 #' my_guard <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)
@@ -50,14 +50,21 @@ benchmark_guardrail <- function(guardrail, positive_cases, negative_cases) {
   }
 }
 
-#' Benchmark a guardrail pipeline end-to-end
+#' Benchmark a pipeline of checks
 #'
-#' Evaluate a secureguard pipeline against a labeled dataset.
+#' Runs several checks that act as one guardrail on a labeled dataset.
+#' It works like [guardrail_eval()], but also accepts an object with a
+#' `$run()` method.
 #'
-#' @param pipeline A function that takes an input and returns TRUE (pass)
-#'   or FALSE (block), or an object with a `$run` method.
-#' @param data A data.frame with columns `input` (character) and `expected`
-#'   (logical). An optional `label` column provides category labels.
+#' A secureguard [secureguard::secure_pipeline()] has no `$run()` method.
+#' Pass one of its check functions instead, such as
+#' `benchmark_pipeline(p$check_input, data)`.
+#'
+#' @param pipeline A function that takes an input and returns `TRUE` (let
+#'   through) or `FALSE` (block), or a list with a `$run()` function.
+#' @param data A data frame with columns `input` (character) and `expected`
+#'   (logical). An optional `label` column says what kind of case each row
+#'   is.
 #' @return A `guardrail_eval_result` object.
 #' @export
 #' @examples

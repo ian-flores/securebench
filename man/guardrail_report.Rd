@@ -2,21 +2,24 @@
 % Please edit documentation in R/report.R
 \name{guardrail_report}
 \alias{guardrail_report}
-\title{Generate a guardrail evaluation report}
+\title{Report on a guardrail run}
 \usage{
 guardrail_report(eval_result, format = c("console", "data.frame"))
 }
 \arguments{
-\item{eval_result}{A \code{guardrail_eval_result} object.}
+\item{eval_result}{A \code{guardrail_eval_result} from \code{\link[=guardrail_eval]{guardrail_eval()}}.}
 
-\item{format}{Output format: \code{"console"} or \code{"data.frame"}.}
+\item{format}{\code{"console"} to print a summary, or \code{"data.frame"} to get one
+row per case.}
 }
 \value{
-For \code{"console"}, prints formatted output and returns \code{eval_result} invisibly.
-For \code{"data.frame"}, returns a data.frame.
+For \code{"console"}, prints the metrics and a line per case marked
+\code{OK} or \code{WRONG}, and returns \code{eval_result} invisibly. For
+\code{"data.frame"}, returns a data frame with columns \code{input},
+\code{expected_pass}, \code{actual_pass}, \code{correct} and \code{label}.
 }
 \description{
-Generate a guardrail evaluation report
+Shows the metrics and whether the guardrail got each case right.
 }
 \examples{
 data <- data.frame(

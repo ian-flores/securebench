@@ -2,22 +2,27 @@
 % Please edit documentation in R/vitals.R
 \name{as_vitals_scorer}
 \alias{as_vitals_scorer}
-\title{Wrap a guardrail as a vitals-compatible scorer}
+\title{Turn a guardrail into a per-case scoring function}
 \usage{
 as_vitals_scorer(guardrail)
 }
 \arguments{
-\item{guardrail}{A guardrail function or object that takes text input and
-returns TRUE (pass) or FALSE (block).}
+\item{guardrail}{A guardrail function or object (see \code{\link[=guardrail_eval]{guardrail_eval()}}).}
 }
 \value{
-A function with signature \verb{function(input, expected)} returning
-numeric 0 or 1.
+A function with arguments \code{input} and \code{expected} that returns
+1 or 0.
 }
 \description{
-Creates a function compatible with the vitals package scoring interface.
-The returned function accepts \code{input} and \code{expected} arguments and returns
-a numeric score (1 for correct, 0 for incorrect).
+Returns a function that runs the guardrail on one input and scores it 1
+if the result matches \code{expected} and 0 if not. If the guardrail throws
+an error, the input counts as blocked.
+}
+\details{
+The name refers to the \href{https://vitals.tidyverse.org/}{vitals} package,
+but a vitals scorer takes a task's whole \code{samples} data frame rather
+than one case. To use this in a vitals \code{Task}, call the returned
+function on each row from a small wrapper.
 }
 \examples{
 my_guard <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)

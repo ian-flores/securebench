@@ -1,13 +1,17 @@
-#' Wrap a guardrail as a vitals-compatible scorer
+#' Turn a guardrail into a per-case scoring function
 #'
-#' Creates a function compatible with the vitals package scoring interface.
-#' The returned function accepts `input` and `expected` arguments and returns
-#' a numeric score (1 for correct, 0 for incorrect).
+#' Returns a function that runs the guardrail on one input and scores it 1
+#' if the result matches `expected` and 0 if not. If the guardrail throws
+#' an error, the input counts as blocked.
 #'
-#' @param guardrail A guardrail function or object that takes text input and
-#'   returns TRUE (pass) or FALSE (block).
-#' @return A function with signature `function(input, expected)` returning
-#'   numeric 0 or 1.
+#' The name refers to the [vitals](https://vitals.tidyverse.org/) package,
+#' but a vitals scorer takes a task's whole `samples` data frame rather
+#' than one case. To use this in a vitals `Task`, call the returned
+#' function on each row from a small wrapper.
+#'
+#' @param guardrail A guardrail function or object (see [guardrail_eval()]).
+#' @return A function with arguments `input` and `expected` that returns
+#'   1 or 0.
 #' @export
 #' @examples
 #' my_guard <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)

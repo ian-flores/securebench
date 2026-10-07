@@ -2,24 +2,35 @@
 % Please edit documentation in R/guardrail-eval.R
 \name{guardrail_eval}
 \alias{guardrail_eval}
-\title{Evaluate a guardrail against a dataset}
+\title{Run a guardrail on a labeled dataset}
 \usage{
 guardrail_eval(guardrail, data)
 }
 \arguments{
-\item{guardrail}{A function that takes a text input and returns \code{TRUE}
-(pass) or \code{FALSE} (block), or a secureguard guardrail object.}
+\item{guardrail}{The guardrail to test. This can be a function that
+takes a string and returns \code{TRUE} (let through) or \code{FALSE} (block), a
+secureguard guardrail, or a list with a \verb{$check()} or \verb{$run()}
+function. The function may also return a list or object with a \code{pass}
+field, such as a secureguard result.}
 
-\item{data}{A data.frame with columns \code{input} (character) and \code{expected}
-(logical). An optional \code{label} column provides category labels.}
+\item{data}{A data frame with columns \code{input} (character) and \code{expected}
+(logical). An optional \code{label} column says what kind of case each row
+is.}
 }
 \value{
-A \code{guardrail_eval_result} object.
+A \code{guardrail_eval_result} object. Pass it to
+\code{\link[=guardrail_metrics]{guardrail_metrics()}}, \code{\link[=guardrail_confusion]{guardrail_confusion()}}, \code{\link[=guardrail_report]{guardrail_report()}}
+or \code{\link[=guardrail_compare]{guardrail_compare()}}.
 }
 \description{
-Runs a guardrail function against each row in a data frame.
-Each row should have \code{input} as the text to check and \code{expected}
-as \code{TRUE} (should pass) or \code{FALSE} (should block).
+Runs the guardrail on each row of a data frame and records whether it
+let the input through. Each row has the text to check in \code{input} and
+the right answer in \code{expected}: \code{TRUE} if the input should get through,
+\code{FALSE} if it should be blocked.
+}
+\details{
+If the guardrail throws an error on an input, that input counts as
+blocked.
 }
 \examples{
 data <- data.frame(
