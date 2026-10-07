@@ -10,3 +10,4 @@
 ^\.claude$
 ^_pkgdown\.yaml$
 ^docs$
+^pkgdown$
