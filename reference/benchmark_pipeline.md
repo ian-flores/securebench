@@ -1,6 +1,9 @@
-# Benchmark a guardrail pipeline end-to-end
+# Benchmark a pipeline of checks
 
-Evaluate a secureguard pipeline against a labeled dataset.
+Runs several checks that act as one guardrail on a labeled dataset. It
+works like
+[`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md),
+but also accepts an object with a `$run()` method.
 
 ## Usage
 
@@ -12,17 +15,25 @@ benchmark_pipeline(pipeline, data)
 
 - pipeline:
 
-  A function that takes an input and returns TRUE (pass) or FALSE
-  (block), or an object with a `$run` method.
+  A function that takes an input and returns `TRUE` (let through) or
+  `FALSE` (block), or a list with a `$run()` function.
 
 - data:
 
-  A data.frame with columns `input` (character) and `expected`
-  (logical). An optional `label` column provides category labels.
+  A data frame with columns `input` (character) and `expected`
+  (logical). An optional `label` column says what kind of case each row
+  is.
 
 ## Value
 
 A `guardrail_eval_result` object.
+
+## Details
+
+A secureguard
+[`secureguard::secure_pipeline()`](https://ian-flores.github.io/secureguard/reference/secure_pipeline.html)
+has no `$run()` method. Pass one of its check functions instead, such as
+`benchmark_pipeline(p$check_input, data)`.
 
 ## Examples
 

@@ -1,6 +1,6 @@
-# List available reference dataset names
+# List the bundled datasets
 
-List available reference dataset names
+List the bundled datasets
 
 ## Usage
 
@@ -10,4 +10,5 @@ reference_datasets()
 
 ## Value
 
-Character vector.
+A character vector of names you can pass to
+[`load_reference()`](https://ian-flores.github.io/securebench/reference/load_reference.md).

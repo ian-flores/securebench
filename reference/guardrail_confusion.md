@@ -1,6 +1,6 @@
-# Create a confusion matrix from guardrail evaluation
+# Confusion matrix for a guardrail
 
-Create a confusion matrix from guardrail evaluation
+Confusion matrix for a guardrail
 
 ## Usage
 
@@ -12,12 +12,14 @@ guardrail_confusion(eval_result)
 
 - eval_result:
 
-  A `guardrail_eval_result` object.
+  A `guardrail_eval_result` from
+  [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md).
 
 ## Value
 
-A 2x2 matrix with rows = predicted (blocked/passed) and columns = actual
-(should_block/should_pass).
+A 2x2 matrix of counts. Rows are what the guardrail did (`blocked`,
+`passed`) and columns are what it should have done (`should_block`,
+`should_pass`).
 
 ## Examples
 

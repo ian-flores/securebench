@@ -1,8 +1,8 @@
-# Wrap a guardrail as a vitals-compatible scorer
+# Turn a guardrail into a per-case scoring function
 
-Creates a function compatible with the vitals package scoring interface.
-The returned function accepts `input` and `expected` arguments and
-returns a numeric score (1 for correct, 0 for incorrect).
+Returns a function that runs the guardrail on one input and scores it 1
+if the result matches `expected` and 0 if not. If the guardrail throws
+an error, the input counts as blocked.
 
 ## Usage
 
@@ -14,13 +14,19 @@ as_vitals_scorer(guardrail)
 
 - guardrail:
 
-  A guardrail function or object that takes text input and returns TRUE
-  (pass) or FALSE (block).
+  A guardrail function or object (see
+  [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md)).
 
 ## Value
 
-A function with signature `function(input, expected)` returning numeric
-0 or 1.
+A function with arguments `input` and `expected` that returns 1 or 0.
+
+## Details
+
+The name refers to the [vitals](https://vitals.tidyverse.org/) package,
+but a vitals scorer takes a task's whole `samples` data frame rather
+than one case. To use this in a vitals `Task`, call the returned
+function on each row from a small wrapper.
 
 ## Examples
 

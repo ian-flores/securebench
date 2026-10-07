@@ -1,8 +1,9 @@
-# Evaluate a guardrail against a dataset
+# Run a guardrail on a labeled dataset
 
-Runs a guardrail function against each row in a data frame. Each row
-should have `input` as the text to check and `expected` as `TRUE`
-(should pass) or `FALSE` (should block).
+Runs the guardrail on each row of a data frame and records whether it
+let the input through. Each row has the text to check in `input` and the
+right answer in `expected`: `TRUE` if the input should get through,
+`FALSE` if it should be blocked.
 
 ## Usage
 
@@ -14,17 +15,31 @@ guardrail_eval(guardrail, data)
 
 - guardrail:
 
-  A function that takes a text input and returns `TRUE` (pass) or
-  `FALSE` (block), or a secureguard guardrail object.
+  The guardrail to test. This can be a function that takes a string and
+  returns `TRUE` (let through) or `FALSE` (block), a secureguard
+  guardrail, or a list with a `$check()` or `$run()` function. The
+  function may also return a list or object with a `pass` field, such as
+  a secureguard result.
 
 - data:
 
-  A data.frame with columns `input` (character) and `expected`
-  (logical). An optional `label` column provides category labels.
+  A data frame with columns `input` (character) and `expected`
+  (logical). An optional `label` column says what kind of case each row
+  is.
 
 ## Value
 
-A `guardrail_eval_result` object.
+A `guardrail_eval_result` object. Pass it to
+[`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md),
+[`guardrail_confusion()`](https://ian-flores.github.io/securebench/reference/guardrail_confusion.md),
+[`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md)
+or
+[`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md).
+
+## Details
+
+If the guardrail throws an error on an input, that input counts as
+blocked.
 
 ## Examples
 

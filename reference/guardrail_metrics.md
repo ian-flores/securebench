@@ -1,7 +1,7 @@
-# Compute guardrail evaluation metrics
+# Precision, recall and other metrics for a guardrail
 
-Computes precision, recall, F1, accuracy, and confusion counts from a
-guardrail evaluation result.
+Counts the guardrail's right and wrong calls and computes precision,
+recall, F1 and accuracy from them.
 
 ## Usage
 
@@ -13,26 +13,28 @@ guardrail_metrics(eval_result)
 
 - eval_result:
 
-  A `guardrail_eval_result` object.
+  A `guardrail_eval_result` from
+  [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md).
 
 ## Value
 
-A named list with tp, tn, fp, fn, precision, recall, f1, accuracy.
+A named list with `true_positives`, `true_negatives`, `false_positives`,
+`false_negatives`, `precision`, `recall`, `f1` and `accuracy`.
 
 ## Details
 
-Convention: blocking is the "positive" class.
+Blocking counts as the positive result:
 
-- True positive: expected=FALSE (should block) and pass=FALSE (was
-  blocked)
+- True positive: should be blocked, and was.
 
-- True negative: expected=TRUE (should pass) and pass=TRUE (was passed)
+- True negative: should get through, and did.
 
-- False positive: expected=TRUE (should pass) but pass=FALSE (was
-  blocked)
+- False positive: should get through, but was blocked.
 
-- False negative: expected=FALSE (should block) but pass=TRUE (was
-  passed)
+- False negative: should be blocked, but got through.
+
+A metric is `NA` when its denominator is zero, for example precision
+when the guardrail blocked nothing.
 
 ## Examples
 

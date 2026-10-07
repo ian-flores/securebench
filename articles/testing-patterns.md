@@ -1,48 +1,28 @@
-# Guardrail Testing Patterns
+# Guardrail testing patterns
 
 ## Overview
 
-securebench provides security-specific benchmarks for R LLM agents:
-labeled datasets and harnesses for measuring prompt-injection
-resistance, dangerous-code detection, and guardrail accuracy. (For
-general-purpose LLM evaluation, use
-[vitals](https://vitals.tidyverse.org/); the two compose via
-[`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md).)
-
-The
 [`vignette("securebench")`](https://ian-flores.github.io/securebench/articles/securebench.md)
-quickstart introduced precision, recall, F1, and the confusion matrix,
-the vocabulary for reasoning about guardrail accuracy. This vignette
-walks through the practical patterns for going from “I have a guardrail”
-to “I can prove my guardrail works and catch regressions automatically.”
+explained precision, recall, F1 and the confusion matrix. This vignette
+is about using them day to day: building a test set, checking a
+guardrail against it, and setting up tests that fail when a change makes
+the guardrail worse.
 
-Every operation runs locally; no API calls, no external services.
+Everything runs on your machine. Nothing calls an API.
 
-### The benchmark workflow
+### The workflow
 
-The overall workflow follows a repeatable loop: benchmark a guardrail,
-compare against a baseline, and generate reports that tell you what to
-fix next.
+It’s a loop. Run the guardrail on your test set, compare against the
+last good version if you have one, look at the report, fix what’s wrong,
+and run it again.
 
-``` mermaid
-graph LR
-    A["Define test<br/>dataset"] --> B["Evaluate<br/>guardrail"]
-    B --> C{"Baseline<br/>exists?"}
-    C -- Yes --> D["Compare<br/>versions"]
-    C -- No --> E["Save as<br/>baseline"]
-    D --> F["Generate<br/>report"]
-    E --> F
-    F --> G{"Metrics<br/>acceptable?"}
-    G -- No --> H["Improve<br/>guardrail"]
-    H --> B
-    G -- Yes --> I["Ship it"]
-```
+![](data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIGFyaWEtbGFiZWw9IkZsb3c6IGRlZmluZSBhIHRlc3Qgc2V0LCBydW4gdGhlIGd1YXJkcmFpbCwgY29tcGFyZSB3aXRoIG9yIHNhdmUgYSBiYXNlbGluZSwgcmVhZCB0aGUgcmVwb3J0LCB0aGVuIHNoaXAgaXQgb3IgZml4IHRoZSBndWFyZHJhaWwgYW5kIHJ1biBpdCBhZ2FpbiIgdmlld2JveD0iMCAwIDk0MCAyNzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PG1hcmtlciBpZD0id2YtYXJyb3ciIHZpZXdib3g9IjAgMCAxMCAxMCIgcmVmeD0iOSIgcmVmeT0iNSIgbWFya2Vyd2lkdGg9IjciIG1hcmtlcmhlaWdodD0iNyIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0xIDFMOSA1TDEgOSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMmIxZjEyIiBzdHJva2Utd2lkdGg9IjEiIC8+PC9tYXJrZXI+PHBhdHRlcm4gaWQ9IndmLWhhdGNoIiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiBwYXR0ZXJudW5pdHM9InVzZXJTcGFjZU9uVXNlIiBwYXR0ZXJudHJhbnNmb3JtPSJyb3RhdGUoNDUpIj48bGluZSB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iNiIgc3Ryb2tlPSIjYmY1YTM2IiBzdHJva2Utd2lkdGg9IjAuNiIgb3BhY2l0eT0iMC41NSI+PC9saW5lPjwvcGF0dGVybj48L2RlZnM+PHJlY3QgeD0iMTYiIHk9Ijg0IiB3aWR0aD0iMTA4IiBoZWlnaHQ9IjUyIiBmaWxsPSJub25lIiBzdHJva2U9IiMyYjFmMTIiIHN0cm9rZS13aWR0aD0iMC43NSIgLz48dGV4dCB4PSI3MC4wIiB5PSIxMDYuNjc1IiBmb250LWZhbWlseT0iU3BhY2UgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTAuNSIgZmlsbD0iIzJiMWYxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9IjQwMCIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+REVGSU5FIEE8L3RleHQ+PHRleHQgeD0iNzAuMCIgeT0iMTIwLjY3NSIgZm9udC1mYW1pbHk9IlNwYWNlIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjEwLjUiIGZpbGw9IiMyYjFmMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSI0MDAiIGxldHRlci1zcGFjaW5nPSIxLjIiPlRFU1QgU0VUPC90ZXh0PjxwYXRoIGQ9Ik0xMjQgMTEwSDE3MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMmIxZjEyIiBzdHJva2Utd2lkdGg9IjAuNzUiIG1hcmtlci1lbmQ9InVybCgjd2YtYXJyb3cpIiAvPjxyZWN0IHg9IjE3MiIgeT0iODQiIHdpZHRoPSIxMDgiIGhlaWdodD0iNTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJiMWYxMiIgc3Ryb2tlLXdpZHRoPSIwLjc1IiAvPjx0ZXh0IHg9IjIyNi4wIiB5PSIxMDYuNjc1IiBmb250LWZhbWlseT0iU3BhY2UgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTAuNSIgZmlsbD0iIzJiMWYxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9IjQwMCIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+UlVOIFRIRTwvdGV4dD48dGV4dCB4PSIyMjYuMCIgeT0iMTIwLjY3NSIgZm9udC1mYW1pbHk9IlNwYWNlIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjEwLjUiIGZpbGw9IiMyYjFmMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSI0MDAiIGxldHRlci1zcGFjaW5nPSIxLjIiPkdVQVJEUkFJTDwvdGV4dD48cGF0aCBkPSJNMjgwIDExMEgzMTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJiMWYxMiIgc3Ryb2tlLXdpZHRoPSIwLjc1IiBtYXJrZXItZW5kPSJ1cmwoI3dmLWFycm93KSIgLz48cG9seWdvbiBwb2ludHM9IjM2Niw3NS4wIDQyMC4wLDExMCAzNjYsMTQ1LjAgMzEyLjAsMTEwIiBmaWxsPSJub25lIiBzdHJva2U9IiMyYjFmMTIiIHN0cm9rZS13aWR0aD0iMC43NSI+PC9wb2x5Z29uPjx0ZXh0IHg9IjM2NiIgeT0iMTA2LjUiIGZvbnQtZmFtaWx5PSJTcGFjZSBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzJiMWYxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9IjQwMCIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+QkFTRUxJTkU8L3RleHQ+PHRleHQgeD0iMzY2IiB5PSIxMjAuNSIgZm9udC1mYW1pbHk9IlNwYWNlIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMmIxZjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iNDAwIiBsZXR0ZXItc3BhY2luZz0iMS4yIj5TQVZFRD88L3RleHQ+PHBhdGggZD0iTTM2NiA3NVY0OEg0MjYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJiMWYxMiIgc3Ryb2tlLXdpZHRoPSIwLjc1IiBtYXJrZXItZW5kPSJ1cmwoI3dmLWFycm93KSIgLz48dGV4dCB4PSIzNzQiIHk9IjYyIiBmb250LWZhbWlseT0iU3BhY2UgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iOS41IiBmaWxsPSIjNmI1NjM4IiB0ZXh0LWFuY2hvcj0ic3RhcnQiIGZvbnQtd2VpZ2h0PSI0MDAiIGxldHRlci1zcGFjaW5nPSIwLjQiPnllczwvdGV4dD48cmVjdCB4PSI0MjgiIHk9IjI0IiB3aWR0aD0iMTE2IiBoZWlnaHQ9IjQ4IiBmaWxsPSJub25lIiBzdHJva2U9IiMyYjFmMTIiIHN0cm9rZS13aWR0aD0iMC43NSIgLz48dGV4dCB4PSI0ODYuMCIgeT0iNDQuNjc1IiBmb250LWZhbWlseT0iU3BhY2UgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTAuNSIgZmlsbD0iIzJiMWYxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9IjQwMCIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+Q09NUEFSRSBXSVRIPC90ZXh0Pjx0ZXh0IHg9IjQ4Ni4wIiB5PSI1OC42NzUiIGZvbnQtZmFtaWx5PSJTcGFjZSBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMC41IiBmaWxsPSIjMmIxZjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iNDAwIiBsZXR0ZXItc3BhY2luZz0iMS4yIj5USEUgQkFTRUxJTkU8L3RleHQ+PHBhdGggZD0iTTM2NiAxNDVWMTcySDQyNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMmIxZjEyIiBzdHJva2Utd2lkdGg9IjAuNzUiIG1hcmtlci1lbmQ9InVybCgjd2YtYXJyb3cpIiAvPjx0ZXh0IHg9IjM3NCIgeT0iMTYyIiBmb250LWZhbWlseT0iU3BhY2UgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iOS41IiBmaWxsPSIjNmI1NjM4IiB0ZXh0LWFuY2hvcj0ic3RhcnQiIGZvbnQtd2VpZ2h0PSI0MDAiIGxldHRlci1zcGFjaW5nPSIwLjQiPm5vPC90ZXh0PjxyZWN0IHg9IjQyOCIgeT0iMTQ4IiB3aWR0aD0iMTE2IiBoZWlnaHQ9IjQ4IiBmaWxsPSJub25lIiBzdHJva2U9IiMyYjFmMTIiIHN0cm9rZS13aWR0aD0iMC43NSIgLz48dGV4dCB4PSI0ODYuMCIgeT0iMTY4LjY3NSIgZm9udC1mYW1pbHk9IlNwYWNlIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjEwLjUiIGZpbGw9IiMyYjFmMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSI0MDAiIGxldHRlci1zcGFjaW5nPSIxLjIiPlNBVkUgSVQgQVM8L3RleHQ+PHRleHQgeD0iNDg2LjAiIHk9IjE4Mi42NzUiIGZvbnQtZmFtaWx5PSJTcGFjZSBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMC41IiBmaWxsPSIjMmIxZjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iNDAwIiBsZXR0ZXItc3BhY2luZz0iMS4yIj5USEUgQkFTRUxJTkU8L3RleHQ+PHBhdGggZD0iTTU0NCA0OEg1NTZWMTEwTTU0NCAxNzJINTU2VjExMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMmIxZjEyIiBzdHJva2Utd2lkdGg9IjAuNzUiIC8+PGNpcmNsZSBjeD0iNTU2IiBjeT0iMTEwIiByPSIxLjYiIGZpbGw9IiMyYjFmMTIiPjwvY2lyY2xlPjxwYXRoIGQ9Ik01NTYgMTEwSDU3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMmIxZjEyIiBzdHJva2Utd2lkdGg9IjAuNzUiIG1hcmtlci1lbmQ9InVybCgjd2YtYXJyb3cpIiAvPjxyZWN0IHg9IjU3NCIgeT0iODYiIHdpZHRoPSI5OCIgaGVpZ2h0PSI0OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMmIxZjEyIiBzdHJva2Utd2lkdGg9IjAuNzUiIC8+PHRleHQgeD0iNjIzLjAiIHk9IjEwNi42NzUiIGZvbnQtZmFtaWx5PSJTcGFjZSBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMC41IiBmaWxsPSIjMmIxZjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iNDAwIiBsZXR0ZXItc3BhY2luZz0iMS4yIj5SRUFEIFRIRTwvdGV4dD48dGV4dCB4PSI2MjMuMCIgeT0iMTIwLjY3NSIgZm9udC1mYW1pbHk9IlNwYWNlIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjEwLjUiIGZpbGw9IiMyYjFmMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSI0MDAiIGxldHRlci1zcGFjaW5nPSIxLjIiPlJFUE9SVDwvdGV4dD48cGF0aCBkPSJNNjcyIDExMEg3MDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJiMWYxMiIgc3Ryb2tlLXdpZHRoPSIwLjc1IiBtYXJrZXItZW5kPSJ1cmwoI3dmLWFycm93KSIgLz48cG9seWdvbiBwb2ludHM9Ijc1Niw3NS4wIDgxMi4wLDExMCA3NTYsMTQ1LjAgNzAwLjAsMTEwIiBmaWxsPSJub25lIiBzdHJva2U9IiMyYjFmMTIiIHN0cm9rZS13aWR0aD0iMC43NSI+PC9wb2x5Z29uPjx0ZXh0IHg9Ijc1NiIgeT0iMTA2LjUiIGZvbnQtZmFtaWx5PSJTcGFjZSBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzJiMWYxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9IjQwMCIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+R09PRDwvdGV4dD48dGV4dCB4PSI3NTYiIHk9IjEyMC41IiBmb250LWZhbWlseT0iU3BhY2UgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMyYjFmMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSI0MDAiIGxldHRlci1zcGFjaW5nPSIxLjIiPkVOT1VHSD88L3RleHQ+PHBhdGggZD0iTTgxMiAxMTBIODQwIiBmaWxsPSJub25lIiBzdHJva2U9IiMyYjFmMTIiIHN0cm9rZS13aWR0aD0iMC43NSIgbWFya2VyLWVuZD0idXJsKCN3Zi1hcnJvdykiIC8+PHRleHQgeD0iODE4IiB5PSIxMDIiIGZvbnQtZmFtaWx5PSJTcGFjZSBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSI5LjUiIGZpbGw9IiM2YjU2MzgiIHRleHQtYW5jaG9yPSJzdGFydCIgZm9udC13ZWlnaHQ9IjQwMCIgbGV0dGVyLXNwYWNpbmc9IjAuNCI+eWVzPC90ZXh0PjxyZWN0IHg9Ijg0MiIgeT0iODgiIHdpZHRoPSI4MiIgaGVpZ2h0PSI0NCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYmY1YTM2IiBzdHJva2Utd2lkdGg9IjAuNzUiIC8+PHRleHQgeD0iODgzLjAiIHk9IjExMy42NzUiIGZvbnQtZmFtaWx5PSJTcGFjZSBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMC41IiBmaWxsPSIjYmY1YTM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iNDAwIiBsZXR0ZXItc3BhY2luZz0iMS4yIj5TSElQIElUPC90ZXh0PjxwYXRoIGQ9Ik03NTYgMTQ1VjIzNkg2OTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJiMWYxMiIgc3Ryb2tlLXdpZHRoPSIwLjc1IiBtYXJrZXItZW5kPSJ1cmwoI3dmLWFycm93KSIgLz48dGV4dCB4PSI3NjQiIHk9IjE3MCIgZm9udC1mYW1pbHk9IlNwYWNlIE1vbm8sIHVpLW1vbm9zcGFjZSwgbW9ub3NwYWNlIiBmb250LXNpemU9IjkuNSIgZmlsbD0iIzZiNTYzOCIgdGV4dC1hbmNob3I9InN0YXJ0IiBmb250LXdlaWdodD0iNDAwIiBsZXR0ZXItc3BhY2luZz0iMC40Ij5ubzwvdGV4dD48cmVjdCB4PSI1ODgiIHk9IjIxNiIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMmIxZjEyIiBzdHJva2Utd2lkdGg9IjAuNzUiIC8+PHRleHQgeD0iNjM4LjAiIHk9IjIzMi42NzUiIGZvbnQtZmFtaWx5PSJTcGFjZSBNb25vLCB1aS1tb25vc3BhY2UsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMC41IiBmaWxsPSIjMmIxZjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iNDAwIiBsZXR0ZXItc3BhY2luZz0iMS4yIj5GSVggVEhFPC90ZXh0Pjx0ZXh0IHg9IjYzOC4wIiB5PSIyNDYuNjc1IiBmb250LWZhbWlseT0iU3BhY2UgTW9ubywgdWktbW9ub3NwYWNlLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTAuNSIgZmlsbD0iIzJiMWYxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9IjQwMCIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+R1VBUkRSQUlMPC90ZXh0PjxwYXRoIGQ9Ik01ODggMjM2SDIyNlYxMzgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJiMWYxMiIgc3Ryb2tlLXdpZHRoPSIwLjc1IiBtYXJrZXItZW5kPSJ1cmwoI3dmLWFycm93KSIgc3Ryb2tlLWRhc2hhcnJheT0iMyAzIiAvPjwvc3ZnPg==)
 
-Each section below maps to one or more steps in this workflow.
+Fig. 1 · The benchmarking loop
 
-## Designing test datasets
+## Building a test set
 
-A securebench test dataset is a plain `data.frame` with three columns:
+A test set is a plain data frame with three columns:
 
 | Column     | Type      | Description                                       |
 |------------|-----------|---------------------------------------------------|
@@ -50,10 +30,9 @@ A securebench test dataset is a plain `data.frame` with three columns:
 | `expected` | logical   | `TRUE` if the guardrail should **pass** the input |
 | `label`    | character | (optional) A human-readable category for the case |
 
-The convention is that `TRUE` means “safe / allowed” and `FALSE` means
-“dangerous / should be blocked”. This matches the return value of a
-guardrail function: it returns `TRUE` when the input passes and `FALSE`
-when it blocks.
+`TRUE` means the input is safe and should get through. `FALSE` means
+it’s dangerous and should be blocked. That matches what a guardrail
+returns: `TRUE` to let an input through, `FALSE` to block it.
 
 ``` r
 
@@ -94,23 +73,25 @@ injection_data
 #> 6    sql_injection
 ```
 
-### Tips for good test data
+### Tips
 
-- Balance the classes. Include roughly equal numbers of positive (should
-  block) and negative (should pass) cases so that accuracy is not
-  misleading.
-- Label every case. The `label` column makes reports easier to read and
-  helps you spot which categories of attack a guardrail misses.
-- Cover edge cases. Include borderline inputs that are close to the
-  decision boundary, not just obvious examples.
-- Keep it deterministic. Guardrails tested with securebench should be
-  pure functions (same input always gives same output) so that results
-  are reproducible.
+Aim for about as many inputs that should be blocked as inputs that
+should get through. If 95% of your cases are safe, a guardrail that
+blocks nothing still scores 95% accuracy.
 
-## Running guardrail_eval() and interpreting metrics
+Label every case. The labels show up in reports and make it easy to see
+which kind of attack a guardrail keeps missing.
 
-Define a guardrail function and evaluate it. A guardrail takes a single
-character input and returns `TRUE` (pass) or `FALSE` (block):
+Include borderline inputs, not just obvious ones. “How do I drop a
+column?” tells you more than “DROP TABLE users”.
+
+Use guardrails that give the same answer for the same input every time.
+Otherwise you can’t compare one run with the next.
+
+## Running a guardrail and reading the metrics
+
+A guardrail takes one string and returns `TRUE` to let it through or
+`FALSE` to block it:
 
 ``` r
 
@@ -124,7 +105,7 @@ simple_guard <- function(text) {
 }
 ```
 
-Run the evaluation:
+Run it on the test set:
 
 ``` r
 
@@ -138,8 +119,8 @@ result
 #> Accuracy: 1.0000
 ```
 
-The `result` is a `guardrail_eval_result` S7 object. Printing it shows a
-summary. To get the raw metrics as a list:
+`result` is a `guardrail_eval_result` object, and printing it shows a
+summary. To get the numbers as a list:
 
 ``` r
 
@@ -170,7 +151,7 @@ m
 #> [1] 1
 ```
 
-The metrics list contains:
+The list has:
 
 | Metric | Meaning |
 |----|----|
@@ -183,8 +164,8 @@ The metrics list contains:
 | `f1` | Harmonic mean of precision and recall |
 | `accuracy` | (TP + TN) / total |
 
-Note the convention: **blocking is the positive class**. A true positive
-means the guardrail correctly blocked a dangerous input.
+Blocking counts as the positive result, so a true positive is a
+dangerous input that the guardrail blocked.
 
 ``` r
 
@@ -198,10 +179,9 @@ cat(sprintf("Accuracy:  %.2f\n", m$accuracy))
 #> Accuracy:  1.00
 ```
 
-## Confusion matrix analysis
+## The confusion matrix
 
-The confusion matrix gives a compact two-dimensional view of how the
-guardrail performed:
+The confusion matrix puts the same counts in a 2x2 table:
 
 ``` r
 
@@ -213,25 +193,20 @@ cm
 #>   passed             0           3
 ```
 
-The matrix has:
+Rows are what the guardrail did (`blocked` or `passed`). Columns are
+what it should have done (`should_block` or `should_pass`). So the four
+cells are:
 
-- **Rows** = what the guardrail predicted (`blocked` / `passed`)
-- **Columns** = what the ground truth says (`should_block` /
-  `should_pass`)
+| Cell                            | Interpretation                            |
+|---------------------------------|-------------------------------------------|
+| `cm["blocked", "should_block"]` | True positives: blocked, correctly        |
+| `cm["passed", "should_block"]`  | False negatives: attacks that got through |
+| `cm["blocked", "should_pass"]`  | False positives: safe inputs blocked      |
+| `cm["passed", "should_pass"]`   | True negatives: let through, correctly    |
 
-Reading the four cells:
-
-| Cell                            | Interpretation                    |
-|---------------------------------|-----------------------------------|
-| `cm["blocked", "should_block"]` | True positives: correctly blocked |
-| `cm["passed", "should_block"]`  | False negatives: missed threats   |
-| `cm["blocked", "should_pass"]`  | False positives: over-blocked     |
-| `cm["passed", "should_pass"]`   | True negatives: correctly allowed |
-
-In security contexts, false negatives are usually worse than false
-positives because a missed attack is more dangerous than an over-eager
-block. Use recall to track how well you catch threats, and precision to
-track how often you incorrectly block legitimate inputs.
+In security, a missed attack is usually worse than a false alarm. Recall
+tells you how many attacks you catch. Precision tells you how often you
+block something you shouldn’t.
 
 ``` r
 
@@ -243,12 +218,11 @@ cat("False alarms:      ", cm["blocked", "should_pass"], "/",
 #> False alarms:       0 / 3
 ```
 
-## Detailed reports
+## Per-case reports
 
-Use
 [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md)
-to see per-case results. The `"data.frame"` format is useful for
-programmatic analysis:
+shows the result for each case. With `format = "data.frame"` you get
+something you can filter:
 
 ``` r
 
@@ -270,8 +244,8 @@ report_df
 #> 6       FALSE    TRUE    sql_injection
 ```
 
-The data frame has columns `input`, `expected_pass`, `actual_pass`,
-`correct`, and `label`. You can filter to find failures:
+The columns are `input`, `expected_pass`, `actual_pass`, `correct` and
+`label`. To see only the cases it got wrong:
 
 ``` r
 
@@ -285,23 +259,23 @@ if (nrow(failures) > 0) {
 #> All cases passed correctly.
 ```
 
-The `"console"` format prints a formatted summary directly, useful
-during interactive development:
+`format = "console"` prints a summary instead, which is easier to read
+while you’re working:
 
 ``` r
 
 guardrail_report(result, format = "console")
 ```
 
-## Comparing guardrails with guardrail_compare()
+## Comparing two versions
 
-When you change a guardrail, you need to check that the change actually
-helped and that nothing regressed.
+When you change a guardrail, check that the change helped and didn’t
+break anything.
 [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md)
-takes a baseline and a comparison result and shows what changed.
+takes an old result and a new one and tells you what changed.
 
-First, create an improved guardrail that also catches
-[`eval()`](https://rdrr.io/r/base/eval.html) attacks:
+Here’s a new version that also blocks
+[`eval()`](https://rdrr.io/r/base/eval.html):
 
 ``` r
 
@@ -316,7 +290,7 @@ improved_guard <- function(text) {
 ```
 
 Add an [`eval()`](https://rdrr.io/r/base/eval.html) attack to the test
-data and re-evaluate both guardrails on the same dataset:
+set and run both versions on it:
 
 ``` r
 
@@ -334,7 +308,7 @@ result_v1 <- guardrail_eval(simple_guard, extended_data)
 result_v2 <- guardrail_eval(improved_guard, extended_data)
 ```
 
-Now compare:
+Then compare:
 
 ``` r
 
@@ -362,21 +336,20 @@ comparison
 #> [1] 6
 ```
 
-The comparison list contains:
+The result is a list with:
 
 | Field | Meaning |
 |----|----|
-| `delta_precision` | Change in precision (positive = improvement) |
+| `delta_precision` | Change in precision (positive means better) |
 | `delta_recall` | Change in recall |
 | `delta_f1` | Change in F1 |
 | `delta_accuracy` | Change in accuracy |
-| `improved` | Number of cases that the new version got right but the old got wrong |
-| `regressed` | Number of cases that the new version got wrong but the old got right |
-| `unchanged` | Number of cases with the same outcome |
+| `improved` | Cases the new version gets right and the old one got wrong |
+| `regressed` | Cases the new version gets wrong and the old one got right |
+| `unchanged` | Cases where both versions agree on right or wrong |
 
-The most important field for regression detection is `regressed`. If it
-is greater than zero, the new guardrail broke something that previously
-worked:
+`regressed` is the one to watch. If it’s above zero, the new version
+broke something that used to work:
 
 ``` r
 
@@ -393,19 +366,17 @@ cat(sprintf("F1 delta: %+.4f\n", comparison$delta_f1))
 #> F1 delta: +0.1429
 ```
 
-## Regression testing patterns
+## Catching regressions in your tests
 
-A regression test suite ensures guardrails do not degrade over time. The
-pattern is:
+To stop a guardrail from quietly getting worse, keep one test set and
+add to it whenever you find a new attack. Save a baseline, either the
+metrics or a whole `guardrail_eval_result`. After every change, run the
+guardrail again and compare.
 
-1.  Maintain a canonical test dataset (growing as you discover new
-    attack vectors)
-2.  Store baseline metrics or a baseline `guardrail_eval_result`
-3.  After every guardrail change, re-evaluate and compare
+### Check the metrics against a minimum
 
-### Pattern 1: assert on absolute metrics
-
-The simplest approach: assert that key metrics stay above a threshold.
+The simplest check: fail if recall, precision or F1 drops below a number
+you pick.
 
 ``` r
 
@@ -437,10 +408,9 @@ cat("All metric thresholds met.\n")
 #> All metric thresholds met.
 ```
 
-### Pattern 2: assert no regressions against baseline
+### Check that no case got worse
 
-Compare against a saved baseline to make sure no individual case
-regressed:
+Compare against a saved baseline and fail if any single case regressed:
 
 ``` r
 
@@ -458,11 +428,12 @@ cat("No regressions detected.\n")
 #> No regressions detected.
 ```
 
-### Pattern 3: use benchmark_guardrail() for quick checks
+### Quick checks with benchmark_guardrail()
 
-For a quick smoke test during development,
+While you’re working,
 [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md)
-builds the dataset for you from positive and negative case vectors:
+saves you building a data frame. Pass the inputs to block and the inputs
+to let through as two vectors:
 
 ``` r
 
@@ -485,11 +456,12 @@ cat(sprintf("Quick check -- F1: %.2f, Recall: %.2f\n", metrics$f1, metrics$recal
 #> Quick check -- F1: 1.00, Recall: 1.00
 ```
 
-### Pattern 4: pipeline benchmarking
+### Benchmarking a pipeline
 
-If you have a multi-stage guardrail pipeline (e.g., first check for
-prompt injection, then check for SQL injection), benchmark the composed
-pipeline:
+If your guardrail runs several checks in a row, say prompt injection and
+then SQL injection, you can measure them together.
+[`benchmark_pipeline()`](https://ian-flores.github.io/securebench/reference/benchmark_pipeline.md)
+accepts a function or an object with a `$run()` method:
 
 ``` r
 
@@ -517,22 +489,27 @@ cat(sprintf("Pipeline F1: %.2f\n", pipeline_metrics$f1))
 #> Pipeline F1: 1.00
 ```
 
-## Vitals interop via as_vitals_scorer()
+A secureguard
+[`secure_pipeline()`](https://ian-flores.github.io/secureguard/reference/secure_pipeline.html)
+has no `$run()` method, so pass one of its check functions instead, such
+as `p$check_input`.
 
-The tidyverse’s [vitals](https://vitals.tidyverse.org/) package is the
-general-purpose evaluation framework for LLM applications in R.
+## Using a guardrail with vitals
+
+[vitals](https://vitals.tidyverse.org/) is the tidyverse’s general
+framework for evaluating LLM apps. It has no security datasets, and
+securebench isn’t a general eval framework, so the two cover different
+ground.
 [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md)
-wraps any guardrail into a scorer function that vitals can use, so
-securebench’s security checks slot into a vitals eval suite.
+turns a guardrail into a function that scores a single case.
 
 ``` r
 
 scorer <- as_vitals_scorer(improved_guard)
 ```
 
-The scorer takes two arguments, `input` (character) and `expected`
-(logical), and returns `1` for a correct judgment or `0` for an
-incorrect one:
+It takes `input` (a string) and `expected` (`TRUE` or `FALSE`) and
+returns `1` if the guardrail got it right, `0` if not:
 
 ``` r
 
@@ -549,13 +526,14 @@ scorer("DROP TABLE users", expected = TRUE)
 #> [1] 0
 ```
 
-This means you can use the scorer anywhere vitals expects a scoring
-function, bridging securebench guardrail testing into broader LLM
-evaluation pipelines.
+A vitals scorer works on a task’s whole `samples` data frame, not one
+case at a time. To use this inside a vitals `Task`, call it on each row
+from a small wrapper function.
 
-### Using a scorer on a dataset
+### Scoring a whole data frame
 
-You can manually apply the scorer to a dataset to get per-row scores:
+[`mapply()`](https://rdrr.io/r/base/mapply.html) runs the scorer over
+every row:
 
 ``` r
 

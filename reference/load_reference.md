@@ -1,10 +1,10 @@
-# Bundled reference datasets for guardrail benchmarking
+# Load a bundled test dataset
 
-Ships three small synthetic, labeled datasets suitable as quick-start
-benchmarks for the common guardrail families. Each dataset is a
-`data.frame` with columns `input` (character), `expected` (logical –
-whether the row should be blocked), and `label` (category tag for
-slicing results).
+Loads one of three small labeled datasets that come with the package, so
+you can try a guardrail before building your own test set. Each is a
+data frame with columns `input` (character), `expected` (logical: `TRUE`
+if the input should get through, `FALSE` if it should be blocked), and
+`label` (the kind of case, such as `"benign"` or `"email"`).
 
 ## Usage
 
@@ -16,35 +16,36 @@ load_reference(name)
 
 - name:
 
-  Character scalar; one of the names listed above.
+  The dataset name, one of the names listed above.
 
 ## Value
 
-A `data.frame` with columns `input`, `expected`, `label`.
+A data frame with columns `input`, `expected` and `label`.
 
 ## Details
 
-Available dataset names:
+The datasets are:
 
-- `"injection_basic"` – classic prompt-injection patterns and benign
-  prompts. ~50 rows. Use against
-  [`secureguard::guard_prompt_injection()`](https://ian-flores.github.io/secureguard/reference/guard_prompt_injection.html)
-  and friends.
+- `"injection_basic"`: 50 rows of prompt injection attempts and ordinary
+  prompts. Try it with
+  [`secureguard::guard_prompt_injection()`](https://ian-flores.github.io/secureguard/reference/guard_prompt_injection.html).
 
-- `"pii_basic"` – PII strings (emails, SSN-shaped, phones, credit cards,
-  IBAN, MAC, etc.) plus benign text. ~50 rows. Use against
+- `"pii_basic"`: 50 rows of personal data (emails, SSNs, phone numbers,
+  credit cards, IBANs, MAC addresses and more) and ordinary text. Try it
+  with
   [`secureguard::guard_input_pii()`](https://ian-flores.github.io/secureguard/reference/guard_input_pii.html)
   or
   [`secureguard::guard_output_pii()`](https://ian-flores.github.io/secureguard/reference/guard_output_pii.html).
 
-- `"secrets_basic"` – secret-looking tokens (AWS, GitHub, JWT, database
-  URLs, high-entropy strings) plus benign text. ~50 rows. Use against
+- `"secrets_basic"`: 49 rows of credentials (AWS and GitHub keys, JWTs,
+  database URLs, random-looking tokens and more) and ordinary text. Try
+  it with
   [`secureguard::guard_output_secrets()`](https://ian-flores.github.io/secureguard/reference/guard_output_secrets.html).
 
-The datasets are intentionally small and synthetic. They are meant as
-smoke tests and ergonomic templates, not as a rigorous benchmark. For
-serious evaluation, bring your own labeled corpus (ideally harvested
-from production logs) and pass it directly to
+The examples are synthetic and there aren't many of them. Use them for a
+smoke test or as a template for your own data. For a benchmark you can
+rely on, build a labeled set from real inputs, such as your production
+logs, and pass it to
 [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md).
 
 ## Examples

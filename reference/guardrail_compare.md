@@ -1,6 +1,9 @@
-# Compare two guardrail evaluation results
+# Compare two runs of a guardrail
 
-Compare metrics between two guardrail evaluations of the same dataset.
+Compares two results from the same dataset, usually an old and a new
+version of a guardrail. Cases are matched by row position, so both runs
+need the rows in the same order. If one has more rows, the extra rows
+are left out of the per-case counts.
 
 ## Usage
 
@@ -12,15 +15,19 @@ guardrail_compare(baseline, comparison)
 
 - baseline:
 
-  A `guardrail_eval_result` (baseline).
+  The `guardrail_eval_result` to compare against, usually the old
+  version.
 
 - comparison:
 
-  A `guardrail_eval_result` (comparison).
+  The new `guardrail_eval_result`.
 
 ## Value
 
-A named list with delta metrics and per-case comparison counts.
+A named list. `delta_precision`, `delta_recall`, `delta_f1` and
+`delta_accuracy` are the new value minus the old one. `improved` counts
+cases the new version gets right and the old one got wrong, `regressed`
+counts the reverse, and `unchanged` counts the rest.
 
 ## Examples
 

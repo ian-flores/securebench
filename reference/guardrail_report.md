@@ -1,6 +1,6 @@
-# Generate a guardrail evaluation report
+# Report on a guardrail run
 
-Generate a guardrail evaluation report
+Shows the metrics and whether the guardrail got each case right.
 
 ## Usage
 
@@ -12,16 +12,20 @@ guardrail_report(eval_result, format = c("console", "data.frame"))
 
 - eval_result:
 
-  A `guardrail_eval_result` object.
+  A `guardrail_eval_result` from
+  [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md).
 
 - format:
 
-  Output format: `"console"` or `"data.frame"`.
+  `"console"` to print a summary, or `"data.frame"` to get one row per
+  case.
 
 ## Value
 
-For `"console"`, prints formatted output and returns `eval_result`
-invisibly. For `"data.frame"`, returns a data.frame.
+For `"console"`, prints the metrics and a line per case marked `OK` or
+`WRONG`, and returns `eval_result` invisibly. For `"data.frame"`,
+returns a data frame with columns `input`, `expected_pass`,
+`actual_pass`, `correct` and `label`.
 
 ## Examples
 

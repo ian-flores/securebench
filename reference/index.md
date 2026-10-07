@@ -3,36 +3,36 @@
 ## Guardrail Evaluation
 
 - [`guardrail_eval_result_class()`](https://ian-flores.github.io/securebench/reference/guardrail_eval_result_class.md)
-  : S7 class for guardrail evaluation results
+  : Guardrail evaluation result
 - [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md)
-  : Evaluate a guardrail against a dataset
+  : Run a guardrail on a labeled dataset
 - [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md)
-  : Compute guardrail evaluation metrics
+  : Precision, recall and other metrics for a guardrail
 - [`guardrail_confusion()`](https://ian-flores.github.io/securebench/reference/guardrail_confusion.md)
-  : Create a confusion matrix from guardrail evaluation
+  : Confusion matrix for a guardrail
 - [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md)
-  : Compare two guardrail evaluation results
+  : Compare two runs of a guardrail
 
 ## Reports
 
 - [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md)
-  : Generate a guardrail evaluation report
+  : Report on a guardrail run
 
 ## Integration
 
 - [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md)
-  : Benchmark a guardrail with positive and negative cases
+  : Benchmark a guardrail from two lists of cases
 - [`benchmark_pipeline()`](https://ian-flores.github.io/securebench/reference/benchmark_pipeline.md)
-  : Benchmark a guardrail pipeline end-to-end
+  : Benchmark a pipeline of checks
 
 ## Vitals Interop
 
 - [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md)
-  : Wrap a guardrail as a vitals-compatible scorer
+  : Turn a guardrail into a per-case scoring function
 
 ## Bundled Reference Datasets
 
 - [`load_reference()`](https://ian-flores.github.io/securebench/reference/load_reference.md)
-  : Bundled reference datasets for guardrail benchmarking
+  : Load a bundled test dataset
 - [`reference_datasets()`](https://ian-flores.github.io/securebench/reference/reference_datasets.md)
-  : List available reference dataset names
+  : List the bundled datasets

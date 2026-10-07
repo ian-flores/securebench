@@ -1,100 +1,24 @@
 # securebench
 
-> **Note:** Experimental release. APIs may change before the 1.0
-> stabilization — track the lifecycle badge above for the current tier.
+securebench tells you how well a guardrail works. You give it a
+guardrail and a set of labeled examples, some that should be blocked and
+some that should get through. It runs the guardrail on each one and
+reports how many attacks it caught and how many harmless inputs it
+blocked by mistake.
 
-Security-specific benchmark datasets and harnesses for R LLM agents.
-Measure prompt-injection resistance, dangerous-code detection, and
-PII/secret leakage against labeled datasets; compute precision/recall/F1
-metrics and confusion matrices; A/B-compare guardrail configurations
-(including [secureguard](https://github.com/ian-flores/secureguard)
-pipelines); and export any guardrail as a
-[vitals](https://vitals.tidyverse.org/)-compatible scorer.
+A guardrail here is any R function that takes text and returns `TRUE` to
+let it through or `FALSE` to block it. Guardrails from
+[secureguard](https://github.com/ian-flores/secureguard) work too.
 
-## Why securebench?
+securebench is for security benchmarks only: how well a guardrail
+catches prompt injection, dangerous code, or leaked personal data and
+secrets, and whether one version of a guardrail does better than
+another. For general LLM evaluation in R, use the tidyverse’s
+[vitals](https://vitals.tidyverse.org/). vitals has no security
+datasets, and securebench doesn’t try to be an eval framework, so the
+two fit together.
 
-R already has a general-purpose LLM evaluation framework: the
-tidyverse’s [vitals](https://vitals.tidyverse.org/). securebench is not
-that, and doesn’t try to be. What R does *not* have is security-specific
-benchmarks: labeled datasets of prompt-injection attempts, dangerous
-code, and credential/PII leaks, plus harnesses that answer the questions
-security work actually asks. Does my injection detector catch attacks
-without blocking legitimate queries? Did tightening a guardrail re-open
-an attack vector it used to catch? Which of two guardrail configurations
-misses fewer threats?
-
-securebench fills that niche. It ships labeled security datasets,
-evaluates any boolean guardrail (a secureguard pipeline or a plain
-function) against them, and reports the metrics that matter for security
-decisions – recall on attacks, precision on benign traffic, and per-case
-regressions between versions. When you want those security checks inside
-a broader eval suite,
-[`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md)
-turns any guardrail into a scorer vitals can run, so the two packages
-compose rather than compete.
-
-## Features
-
-| Function | Description |
-|----|----|
-| [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md) | Evaluate a guardrail against a labeled data frame |
-| [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md) | Compute precision, recall, F1, and accuracy |
-| [`guardrail_confusion()`](https://ian-flores.github.io/securebench/reference/guardrail_confusion.md) | Generate a 2x2 confusion matrix |
-| [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md) | Compare two guardrails with delta metrics and per-case diffs |
-| [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md) | Print a formatted report or return results as a data frame |
-| [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md) | Quick-start: benchmark from positive/negative case vectors |
-| [`benchmark_pipeline()`](https://ian-flores.github.io/securebench/reference/benchmark_pipeline.md) | Evaluate a full secureguard pipeline end-to-end |
-| [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md) | Convert any guardrail to a vitals-compatible scorer function |
-| [`load_reference()`](https://ian-flores.github.io/securebench/reference/load_reference.md) | Load a bundled labeled dataset (`injection_basic`, `pii_basic`, `secrets_basic`) |
-| [`reference_datasets()`](https://ian-flores.github.io/securebench/reference/reference_datasets.md) | List the names of bundled datasets |
-
-## Bundled Reference Datasets
-
-Three small synthetic labeled datasets ship in `inst/extdata/` so you
-can smoke-test guardrails without writing your own corpus first. Each is
-a `data.frame` with `input` (character), `expected` (logical: `TRUE`
-means the guardrail should let the row through, `FALSE` means it should
-block), and `label` (category tag).
-
-``` r
-
-library(secureguard)
-library(securebench)
-
-df <- load_reference("injection_basic")
-res <- guardrail_eval(guard_prompt_injection(), df)
-guardrail_metrics(res)
-```
-
-Available datasets: `injection_basic` (~50 rows of prompt-injection vs
-benign), `pii_basic` (~50 rows of email/SSN/IBAN/MAC/etc. vs benign),
-`secrets_basic` (~50 rows of leaked-credential shapes vs benign). Tokens
-that look like real cloud-provider keys are masked with `EXAMPLE`
-markers so the bundled CSV doesn’t trip GitHub’s secret scanner. These
-are smoke-test fixtures, not production benchmarks — bring your own
-labeled corpus for serious evaluation.
-
-## Companion Packages
-
-securebench is the measurement layer of a small family of packages for
-building secure LLM agents in R. Each package stands alone; together
-they cover sandboxing, hardened tools, runtime guardrails, and
-benchmarking:
-
-| Package | Role |
-|----|----|
-| [securer](https://github.com/ian-flores/securer) | Sandboxed R execution with tool-call IPC |
-| [securetools](https://github.com/ian-flores/securetools) | Pre-built security-hardened tool definitions |
-| [secureguard](https://github.com/ian-flores/secureguard) | Input/code/output guardrails (injection, PII, secrets) |
-| [securebench](https://github.com/ian-flores/securebench) | Security benchmark datasets and guardrail benchmarking harnesses |
-
-secureguard enforces guardrails at runtime; securebench measures whether
-those guardrails (or any boolean classifier) actually work, using
-labeled datasets, precision/recall/F1 metrics, and A/B comparison. For
-general LLM evaluation beyond security, use
-[vitals](https://vitals.tidyverse.org/) – securebench guardrails plug
-into it via
-[`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md).
+The package is experimental, and function names may still change.
 
 ## Installation
 
@@ -104,13 +28,15 @@ into it via
 pak::pak("ian-flores/securebench")
 ```
 
-## Quick Start
+## A quick look
+
+Write down a few inputs that should be blocked and a few that shouldn’t,
+then see how a guardrail does:
 
 ``` r
 
 library(securebench)
 
-# Benchmark a guardrail with known positive/negative cases
 my_guardrail <- function(text) !grepl("DROP TABLE", text, fixed = TRUE)
 
 metrics <- benchmark_guardrail(
@@ -123,7 +49,11 @@ metrics$recall
 metrics$f1
 ```
 
-## Data Frame API
+Recall is the share of attacks the guardrail blocked. Precision is the
+share of blocks that were real attacks rather than false alarms.
+
+For more control, put your cases in a data frame. `expected` is `TRUE`
+when the input should get through and `FALSE` when it should be blocked:
 
 ``` r
 
@@ -139,21 +69,14 @@ cm <- guardrail_confusion(result)
 guardrail_report(result)
 ```
 
-## Vitals Interop
+If the guardrail throws an error on an input, that input counts as
+blocked.
 
-[vitals](https://vitals.tidyverse.org/) is the general LLM evaluation
-framework for R; securebench supplies the security-specific piece. Any
-guardrail exports as a vitals-compatible scorer, so security checks slot
-into your existing vitals eval suites:
+## Comparing two guardrails
 
-``` r
-
-scorer <- as_vitals_scorer(my_guardrail)
-scorer("safe query", TRUE)    # 1 (correct)
-scorer("DROP TABLE x", FALSE) # 1 (correct)
-```
-
-## Comparing Guardrails
+When you change a guardrail, run the old and new versions on the same
+data and compare them. `regressed` counts the cases the new version gets
+wrong that the old one got right.
 
 ``` r
 
@@ -179,23 +102,95 @@ diff$improved       # cases v2 got right that v1 missed
 diff$regressed      # cases v2 got wrong that v1 had right
 ```
 
-## Documentation
+## Bundled datasets
 
-securebench ships with two vignettes:
+Three small labeled datasets come with the package so you can try a
+guardrail before building your own test set. Each is a data frame with
+the same `input`, `expected` and `label` columns as above.
 
-- **Getting Started with securebench** – walkthrough of the core
-  evaluation workflow
-- **Guardrail Testing Patterns** – strategies for building labeled
-  datasets and iterating on guardrail accuracy
+``` r
 
-Browse the full documentation at
-<https://ian-flores.github.io/securebench/>.
+library(secureguard)
+library(securebench)
 
-## Contributing
+df <- load_reference("injection_basic")
+res <- guardrail_eval(guard_prompt_injection(), df)
+guardrail_metrics(res)
+```
 
-Contributions are welcome! Please file issues on
-[GitHub](https://github.com/ian-flores/securebench/issues) and submit
-pull requests.
+| Dataset | Rows | What’s in it |
+|----|----|----|
+| `injection_basic` | 50 | Prompt injection attempts and ordinary prompts |
+| `pii_basic` | 50 | Emails, SSNs, phone numbers, credit cards, IBANs and other personal data, plus ordinary text |
+| `secrets_basic` | 49 | API keys, tokens, database URLs and other credentials, plus ordinary text |
+
+The examples are synthetic. Strings shaped like real cloud keys contain
+the word `EXAMPLE` so GitHub’s secret scanner doesn’t flag the files.
+These datasets are fine for a smoke test but too small to trust as a
+real benchmark. For that, build a labeled set from your own data.
+
+## Functions
+
+| Function | What it does |
+|----|----|
+| [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md) | Runs a guardrail on every row of a labeled data frame |
+| [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md) | Computes precision, recall, F1 and accuracy |
+| [`guardrail_confusion()`](https://ian-flores.github.io/securebench/reference/guardrail_confusion.md) | Returns the 2x2 confusion matrix |
+| [`guardrail_compare()`](https://ian-flores.github.io/securebench/reference/guardrail_compare.md) | Compares two runs and counts cases that got better or worse |
+| [`guardrail_report()`](https://ian-flores.github.io/securebench/reference/guardrail_report.md) | Prints a report, or returns one row per case as a data frame |
+| [`benchmark_guardrail()`](https://ian-flores.github.io/securebench/reference/benchmark_guardrail.md) | Shortcut: takes two vectors of cases instead of a data frame |
+| [`benchmark_pipeline()`](https://ian-flores.github.io/securebench/reference/benchmark_pipeline.md) | Same as [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md), for a function or an object with a `$run()` method |
+| [`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md) | Turns a guardrail into a function that scores one case as 1 (right) or 0 (wrong) |
+| [`load_reference()`](https://ian-flores.github.io/securebench/reference/load_reference.md) | Loads one of the bundled datasets |
+| [`reference_datasets()`](https://ian-flores.github.io/securebench/reference/reference_datasets.md) | Lists the bundled dataset names |
+
+To benchmark a secureguard
+[`secure_pipeline()`](https://ian-flores.github.io/secureguard/reference/secure_pipeline.html),
+pass one of its check functions, such as `pipeline$check_input`, rather
+than the pipeline itself.
+
+## With vitals
+
+[`as_vitals_scorer()`](https://ian-flores.github.io/securebench/reference/as_vitals_scorer.md)
+gives you a function that takes an input and the expected result and
+returns 1 if the guardrail got it right, 0 if not:
+
+``` r
+
+scorer <- as_vitals_scorer(my_guardrail)
+scorer("safe query", TRUE)    # 1 (correct)
+scorer("DROP TABLE x", FALSE) # 1 (correct)
+```
+
+A vitals scorer works on a whole task’s `samples` data frame at once, so
+to use this inside a vitals `Task`, call it on each row from a small
+wrapper function.
+
+## Related packages
+
+securebench is part of a small set of packages for running LLM agents in
+R more safely:
+
+- [securer](https://github.com/ian-flores/securer) runs agent code in a
+  sandbox.
+- [securetools](https://github.com/ian-flores/securetools) has
+  ready-made tools (file access, SQL, web requests) with limits built
+  in.
+- [secureguard](https://github.com/ian-flores/secureguard) checks
+  prompts, generated code and outputs. securebench measures how well
+  those checks work.
+
+## Learn more
+
+- [Getting
+  started](https://ian-flores.github.io/securebench/articles/securebench.html)
+- [Testing
+  patterns](https://ian-flores.github.io/securebench/articles/testing-patterns.html)
+- [Function
+  reference](https://ian-flores.github.io/securebench/reference/)
+
+Found a bug or have an idea? [Open an
+issue](https://github.com/ian-flores/securebench/issues).
 
 ## License
 

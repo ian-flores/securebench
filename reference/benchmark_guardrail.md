@@ -1,7 +1,7 @@
-# Benchmark a guardrail with positive and negative cases
+# Benchmark a guardrail from two lists of cases
 
-Convenience wrapper that constructs a data frame, runs
-[`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md),
+A shortcut for quick checks. It builds the data frame for you, runs
+[`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md)
 and returns
 [`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md).
 
@@ -20,16 +20,16 @@ benchmark_guardrail(guardrail, positive_cases, negative_cases)
 
 - positive_cases:
 
-  Character vector of inputs that SHOULD be blocked.
+  Character vector of inputs that should be blocked.
 
 - negative_cases:
 
-  Character vector of inputs that should NOT be blocked.
+  Character vector of inputs that should get through.
 
 ## Value
 
-A named list of metrics (see
-[`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md)).
+A named list of metrics, as from
+[`guardrail_metrics()`](https://ian-flores.github.io/securebench/reference/guardrail_metrics.md).
 
 ## Examples
 

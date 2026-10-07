@@ -1,6 +1,8 @@
-# S7 class for guardrail evaluation results
+# Guardrail evaluation result
 
-S7 class for guardrail evaluation results
+The S7 class that
+[`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.md)
+returns. You rarely need to create one yourself.
 
 ## Usage
 
@@ -12,7 +14,8 @@ guardrail_eval_result_class(results = list())
 
 - results:
 
-  A list of per-case result lists.
+  A list with one element per case. Each element is a list with `input`,
+  `expected`, `pass` and `label`.
 
 ## Examples
 
